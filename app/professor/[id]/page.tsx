@@ -1,0 +1,497 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { motion } from 'framer-motion';
+import AlignmentBar from '@/components/AlignmentBar';
+import TimingBadge from '@/components/TimingBadge';
+
+const TABS = [
+    { id: 'research', label: 'Research Intelligence', icon: '🔬' },
+    { id: 'lab', label: 'Lab Intelligence', icon: '🏛️' },
+    { id: 'timing', label: 'Timing & Approach', icon: '⏰' },
+    { id: 'skills', label: 'Skills Gap', icon: '📊' },
+    { id: 'grants', label: 'Grants', icon: '💰' },
+    { id: 'email', label: 'Your Email', icon: '✉️' },
+];
+
+export default function ProfessorPage() {
+    const router = useRouter();
+    const [professor, setProfessor] = useState<any>(null);
+    const [activeTab, setActiveTab] = useState('research');
+    const [deepData, setDeepData] = useState<any>(null);
+    const [isLoadingDeep, setIsLoadingDeep] = useState(false);
+    const [copied, setCopied] = useState(false);
+    const [emailSent, setEmailSent] = useState(false);
+
+    useEffect(() => {
+        const stored = sessionStorage.getItem('selectedProfessor');
+        if (stored) {
+            setProfessor(JSON.parse(stored));
+        } else {
+            router.push('/');
+        }
+    }, []);
+
+    const fetchDeepDive = async () => {
+        if (!professor || deepData) return;
+        setIsLoadingDeep(true);
+        try {
+            const context = JSON.parse(sessionStorage.getItem('searchContext') || '{}');
+            const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+            const res = await fetch(`${API_URL}/api/professor/deep`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    professor_name: professor.name,
+                    university: professor.university,
+                    department: professor.department,
+                    student_interest: context.student_interest || '',
+                    student_background: context.student_background || '',
+                    student_level: context.student_level || 'masters',
+                }),
+            });
+            const data = await res.json();
+            setDeepData(data);
+        } catch (err) {
+            console.error('Deep dive error:', err);
+        } finally {
+            setIsLoadingDeep(false);
+        }
+    };
+
+    const handleCopyEmail = () => {
+        const email = deepData?.email_draft || professor?.email_draft;
+        if (email) {
+            navigator.clipboard.writeText(`Subject: ${email.subject}\n\n${email.body}`);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        }
+    };
+
+    if (!professor) {
+        return (
+            <main className="min-h-screen bg-bg-primary flex items-center justify-center">
+                <div className="skeleton h-8 w-48" />
+            </main>
+        );
+    }
+
+    const data = deepData || professor;
+    const score = data.alignment_score || 0;
+
+    return (
+        <main className="min-h-screen bg-bg-primary">
+            {/* Nav */}
+            <div className="border-b border-white/[0.06] bg-bg-secondary/50 backdrop-blur-sm sticky top-0 z-50">
+                <div className="max-w-6xl mx-auto px-6 py-3 flex items-center gap-4">
+                    <button onClick={() => router.back()} className="text-text-tertiary hover:text-text-primary text-sm font-mono transition-colors">
+                        ← Back
+                    </button>
+                    <span className="text-white/10">|</span>
+                    <button onClick={() => router.push('/')} className="font-display text-lg text-text-primary hover:text-accent-amber transition-colors">
+                        LabLens
+                    </button>
+                </div>
+            </div>
+
+            <div className="max-w-6xl mx-auto px-6 py-8">
+                {/* Professor header */}
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
+                    <div className="flex items-start justify-between flex-wrap gap-4">
+                        <div>
+                            <h1 className="font-display text-3xl md:text-4xl text-text-primary mb-1">
+                                Prof. {professor.name}
+                                {professor.has_private_signal && <span className="ml-3 text-accent-purple text-lg" title="Private signal active">🔒</span>}
+                            </h1>
+                            <p className="text-text-secondary font-body">
+                                {professor.university} · {professor.department || 'Computer Science'}
+                                {professor.lab_name && ` · ${professor.lab_name}`}
+                            </p>
+                        </div>
+
+                        {/* Score */}
+                        <div className={`flex items-center gap-3 px-5 py-3 rounded-2xl border ${score >= 85 ? 'border-accent-amber/30 bg-accent-amber/5' :
+                                score >= 70 ? 'border-accent-teal/30 bg-accent-teal/5' :
+                                    'border-white/10 bg-white/5'
+                            }`}>
+                            <span className={`font-mono text-3xl font-bold ${score >= 85 ? 'text-accent-amber' : score >= 70 ? 'text-accent-teal' : 'text-text-secondary'
+                                }`}>
+                                {Math.round(score)}
+                            </span>
+                            <div>
+                                <p className="font-mono text-[10px] text-text-tertiary uppercase tracking-wider">Alignment</p>
+                                <p className={`font-mono text-xs ${score >= 85 ? 'text-accent-amber' : score >= 70 ? 'text-accent-teal' : 'text-text-tertiary'
+                                    }`}>
+                                    {score >= 85 ? 'Strong Match' : score >= 70 ? 'Good Match' : 'Partial Match'}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {data.why_aligned && (
+                        <p className="mt-4 text-accent-teal text-sm font-body bg-accent-teal/5 border border-accent-teal/20 rounded-xl px-4 py-3">
+                            ✦ {data.why_aligned}
+                        </p>
+                    )}
+
+                    {!deepData && (
+                        <button
+                            onClick={fetchDeepDive}
+                            disabled={isLoadingDeep}
+                            className="mt-4 px-4 py-2 rounded-lg bg-accent-purple/20 text-accent-purple font-mono text-sm hover:bg-accent-purple/30 transition-colors disabled:opacity-50"
+                        >
+                            {isLoadingDeep ? '⟳ Loading deep analysis...' : '🔍 Load Full Deep Dive'}
+                        </button>
+                    )}
+                </motion.div>
+
+                {/* Tabs */}
+                <div className="flex gap-1 overflow-x-auto border-b border-white/[0.06] mb-8 pb-0">
+                    {TABS.map((tab) => (
+                        <button
+                            key={tab.id}
+                            onClick={() => setActiveTab(tab.id)}
+                            className={`px-4 py-3 text-sm font-body whitespace-nowrap transition-all ${activeTab === tab.id ? 'tab-active' : 'tab-inactive'
+                                }`}
+                        >
+                            <span className="mr-1.5">{tab.icon}</span>
+                            {tab.label}
+                        </button>
+                    ))}
+                </div>
+
+                {/* Tab content */}
+                <motion.div key={activeTab} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
+                    {activeTab === 'research' && <ResearchTab data={data} />}
+                    {activeTab === 'lab' && <LabTab data={data} />}
+                    {activeTab === 'timing' && <TimingTab data={data} />}
+                    {activeTab === 'skills' && <SkillsTab data={data} />}
+                    {activeTab === 'grants' && <GrantsTab data={data} />}
+                    {activeTab === 'email' && (
+                        <EmailTab
+                            data={data}
+                            copied={copied}
+                            onCopy={handleCopyEmail}
+                            emailSent={emailSent}
+                            onMarkSent={() => setEmailSent(true)}
+                        />
+                    )}
+                </motion.div>
+            </div>
+        </main>
+    );
+}
+
+/* ========== TAB COMPONENTS ========== */
+
+function ResearchTab({ data }: { data: any }) {
+    return (
+        <div className="space-y-6">
+            {/* Current focus */}
+            <Section title="Current Research Focus">
+                <p className="text-text-secondary font-body leading-relaxed">{data.current_focus || 'Loading...'}</p>
+            </Section>
+
+            {/* Open questions */}
+            {data.open_questions?.length > 0 && (
+                <Section title="Open Research Questions">
+                    <ul className="space-y-2">
+                        {data.open_questions.map((q: string, i: number) => (
+                            <li key={i} className="flex gap-2 text-text-secondary text-sm">
+                                <span className="text-accent-amber mt-0.5">▸</span>
+                                <span>{q}</span>
+                            </li>
+                        ))}
+                    </ul>
+                </Section>
+            )}
+
+            {/* Seed Ideas */}
+            {data.seed_ideas?.length > 0 && (
+                <Section title="Research Seed Ideas">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {data.seed_ideas.map((idea: any, i: number) => (
+                            <div key={i} className="glass-card p-5">
+                                <div className="flex items-center gap-2 mb-3">
+                                    <span className="text-accent-amber">💡</span>
+                                    <span className="font-mono text-xs text-accent-amber">Seed Idea {i + 1}</span>
+                                </div>
+                                <h4 className="font-body font-semibold text-text-primary text-sm mb-2">{idea.title}</h4>
+                                <p className="text-text-secondary text-xs leading-relaxed mb-3">{idea.question}</p>
+                                <div className="space-y-2 text-xs">
+                                    <p className="text-accent-teal"><strong>Why this prof:</strong> {idea.connection_to_professor}</p>
+                                    <p className="text-accent-purple"><strong>Why you:</strong> {idea.connection_to_student}</p>
+                                </div>
+                                <span className={`inline-block mt-3 px-2 py-0.5 rounded text-[10px] font-mono ${idea.difficulty === 'phd_level' ? 'bg-accent-coral/10 text-accent-coral' :
+                                        idea.difficulty === 'masters_suitable' ? 'bg-accent-amber/10 text-accent-amber' :
+                                            'bg-accent-teal/10 text-accent-teal'
+                                    }`}>
+                                    {idea.difficulty?.replace('_', ' ')}
+                                </span>
+                            </div>
+                        ))}
+                    </div>
+                </Section>
+            )}
+
+            {/* ML Explainability Panel */}
+            <Section title="How LabLens Computed This Score">
+                <div className="glass-card p-5 font-mono text-xs space-y-3 border-accent-purple/20">
+                    <p className="text-text-tertiary">Model: <span className="text-text-secondary">text-embedding-3-small (OpenAI)</span></p>
+                    <p className="text-text-tertiary">Method: <span className="text-text-secondary">
+                        {data.three_tier_score ? 'Three-tier privacy-preserving composite scoring' : 'Cosine similarity over research embeddings'}
+                    </span></p>
+                    <div className="border-t border-white/[0.06] pt-3">
+                        <p className="text-text-tertiary mb-2">Your interest → vector (1536 dimensions)</p>
+                        {data.alignment_detail?.paper_scores?.map((s: number, i: number) => (
+                            <div key={i} className="flex items-center gap-2 mb-1">
+                                <span className="text-text-tertiary w-4">{i + 1}.</span>
+                                <div className="flex-1 h-1 bg-white/5 rounded-full overflow-hidden">
+                                    <div className="h-full bg-accent-purple rounded-full" style={{ width: `${s}%` }} />
+                                </div>
+                                <span className={`w-10 text-right ${i === data.alignment_detail?.best_matching_paper_idx ? 'text-accent-amber' : 'text-text-secondary'
+                                    }`}>
+                                    {Math.round(s)}%
+                                    {i === data.alignment_detail?.best_matching_paper_idx && ' ★'}
+                                </span>
+                            </div>
+                        ))}
+                        {data.three_tier_score && (
+                            <div className="mt-3 pt-3 border-t border-white/[0.06]">
+                                <p className="text-accent-purple mb-1">🔒 TIER 3 — Confidential signal</p>
+                                <p className="text-text-tertiary">Method: (ε={data.three_tier_score.tier3_score ? '1.0' : 'N/A'})-differentially private Gaussian mechanism</p>
+                                <p className="text-text-tertiary">Privacy guarantee: Source description irreversibly discarded</p>
+                            </div>
+                        )}
+                    </div>
+                    <p className="text-text-tertiary pt-2 border-t border-white/[0.06]">
+                        This is not a Claude opinion. This is a real ML similarity computation over dense vector representations of research content.
+                    </p>
+                </div>
+            </Section>
+        </div>
+    );
+}
+
+function LabTab({ data }: { data: any }) {
+    const culture = data.lab_culture;
+    return (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Lab Culture Report */}
+            <Section title="Lab Culture Report">
+                {culture ? (
+                    <div className="space-y-4">
+                        <div className="flex items-center gap-3">
+                            <span className={`font-mono text-2xl font-bold ${culture.culture_score >= 75 ? 'text-accent-teal' : culture.culture_score >= 50 ? 'text-accent-amber' : 'text-accent-coral'
+                                }`}>
+                                {culture.culture_score}
+                            </span>
+                            <span className="text-text-tertiary font-mono text-xs">/ 100 culture score</span>
+                        </div>
+
+                        {culture.strengths?.length > 0 && (
+                            <div>
+                                <h4 className="text-text-tertiary font-mono text-xs mb-2 uppercase">Strengths</h4>
+                                {culture.strengths.map((s: string, i: number) => (
+                                    <p key={i} className="text-accent-teal text-sm mb-1">✓ {s}</p>
+                                ))}
+                            </div>
+                        )}
+
+                        {culture.watch_fors?.length > 0 && (
+                            <div>
+                                <h4 className="text-text-tertiary font-mono text-xs mb-2 uppercase">Watch For</h4>
+                                {culture.watch_fors.map((w: string, i: number) => (
+                                    <p key={i} className="text-accent-amber text-sm mb-1">⚠ {w}</p>
+                                ))}
+                            </div>
+                        )}
+
+                        <p className="text-text-secondary text-sm"><strong>Timeline:</strong> {culture.graduation_timeline}</p>
+                        <p className="text-text-secondary text-sm"><strong>Best fit:</strong> {culture.best_fit_for}</p>
+
+                        {culture.questions_to_ask?.length > 0 && (
+                            <div>
+                                <h4 className="text-text-tertiary font-mono text-xs mb-2 uppercase mt-4">Questions to Ask</h4>
+                                {culture.questions_to_ask.map((q: string, i: number) => (
+                                    <p key={i} className="text-text-secondary text-sm mb-1">• {q}</p>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                ) : (
+                    <p className="text-text-tertiary text-sm">Load deep dive for lab culture analysis</p>
+                )}
+            </Section>
+
+            {/* Alumni Trail */}
+            <Section title="Lab Alumni — Where Did They Go?">
+                {data.alumni_data ? (
+                    <p className="text-text-secondary text-sm whitespace-pre-wrap">{typeof data.alumni_data === 'string' ? data.alumni_data : JSON.stringify(data.alumni_data, null, 2)}</p>
+                ) : (
+                    <p className="text-text-tertiary text-sm">Load deep dive for alumni data</p>
+                )}
+            </Section>
+        </div>
+    );
+}
+
+function TimingTab({ data }: { data: any }) {
+    const timing = data.timing;
+    if (!timing) return <p className="text-text-tertiary">Load deep dive for timing analysis</p>;
+
+    return (
+        <Section title="Timing Intelligence">
+            <div className="glass-card p-6">
+                <div className="flex items-center gap-4 mb-6">
+                    <div className={`w-20 h-20 rounded-2xl flex items-center justify-center text-3xl font-mono font-bold ${timing.verdict === 'excellent' ? 'bg-accent-teal/10 text-accent-teal border border-accent-teal/20' :
+                            timing.verdict === 'good' ? 'bg-accent-amber/10 text-accent-amber border border-accent-amber/20' :
+                                'bg-accent-coral/10 text-accent-coral border border-accent-coral/20'
+                        }`}>
+                        {timing.timing_score}
+                    </div>
+                    <div>
+                        <TimingBadge timing={timing} />
+                        <p className="text-text-primary font-body mt-1">{timing.primary_reason}</p>
+                        <p className="text-text-secondary text-sm mt-1">{timing.details}</p>
+                    </div>
+                </div>
+                {timing.optimal_send_time && (
+                    <div className="bg-accent-teal/5 border border-accent-teal/20 rounded-xl p-4">
+                        <p className="font-mono text-xs text-accent-teal uppercase mb-1">Best time to send</p>
+                        <p className="text-text-primary font-body">{timing.optimal_send_time}</p>
+                    </div>
+                )}
+            </div>
+        </Section>
+    );
+}
+
+function SkillsTab({ data }: { data: any }) {
+    const skills = data.skills_gap;
+    if (!skills) return <p className="text-text-tertiary">Load deep dive for skills analysis</p>;
+
+    return (
+        <div className="space-y-6">
+            <Section title="Skills Gap Analysis">
+                {skills.required_skills?.length > 0 && (
+                    <div className="space-y-2">
+                        {skills.required_skills.map((s: any, i: number) => (
+                            <div key={i} className="flex items-center justify-between p-3 glass-card">
+                                <span className="text-text-primary text-sm">{s.skill}</span>
+                                <div className="flex items-center gap-2">
+                                    <span className={`font-mono text-[10px] px-2 py-0.5 rounded ${s.importance === 'required' ? 'bg-accent-coral/10 text-accent-coral' :
+                                            s.importance === 'helpful' ? 'bg-accent-amber/10 text-accent-amber' :
+                                                'bg-accent-teal/10 text-accent-teal'
+                                        }`}>{s.importance}</span>
+                                    <span className={`w-3 h-3 rounded-full ${s.student_has ? 'bg-accent-teal' : 'bg-accent-coral'}`} />
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </Section>
+
+            {skills.two_week_prep?.length > 0 && (
+                <Section title="Two-Week Prep Plan">
+                    {skills.two_week_prep.map((week: any, i: number) => (
+                        <div key={i} className="glass-card p-4 mb-3">
+                            <h4 className="font-mono text-xs text-accent-amber mb-2">Week {week.week}</h4>
+                            <ul className="space-y-1">
+                                {week.tasks?.map((t: string, j: number) => (
+                                    <li key={j} className="text-text-secondary text-sm">• {t}</li>
+                                ))}
+                            </ul>
+                        </div>
+                    ))}
+                </Section>
+            )}
+        </div>
+    );
+}
+
+function GrantsTab({ data }: { data: any }) {
+    const grants = data.grants || [];
+    return (
+        <Section title="Active Grants & Funding">
+            {grants.length > 0 ? (
+                <div className="space-y-4">
+                    {grants.map((g: any, i: number) => (
+                        <div key={i} className="glass-card p-5">
+                            <div className="flex items-start justify-between mb-2">
+                                <h4 className="text-text-primary font-body font-semibold text-sm flex-1">{g.title}</h4>
+                                {g.amount && (
+                                    <span className="font-mono text-accent-amber text-sm ml-3">${Number(g.amount).toLocaleString()}</span>
+                                )}
+                            </div>
+                            {g.abstract && <p className="text-text-secondary text-xs leading-relaxed mb-2">{g.abstract}</p>}
+                            {g.expires && <p className="text-text-tertiary font-mono text-[10px]">Expires: {g.expires}</p>}
+                            <p className="text-accent-teal text-xs mt-2">💡 Active grant = this professor likely needs students</p>
+                        </div>
+                    ))}
+                </div>
+            ) : (
+                <p className="text-text-tertiary text-sm">No NSF grants found. Grant data loaded from the public NSF Awards API.</p>
+            )}
+        </Section>
+    );
+}
+
+function EmailTab({ data, copied, onCopy, emailSent, onMarkSent }: {
+    data: any; copied: boolean; onCopy: () => void; emailSent: boolean; onMarkSent: () => void;
+}) {
+    const email = data.email_draft;
+    if (!email) return <p className="text-text-tertiary">Load deep dive to generate email</p>;
+
+    return (
+        <Section title="Your Personalized Email">
+            <div className="glass-card p-6">
+                <div className="mb-4">
+                    <p className="font-mono text-xs text-text-tertiary mb-1">Subject:</p>
+                    <p className="text-text-primary font-body font-semibold">{email.subject}</p>
+                </div>
+                <div className="mb-4">
+                    <p className="font-mono text-xs text-text-tertiary mb-1">Body:</p>
+                    <pre className="text-text-secondary font-body text-sm whitespace-pre-wrap leading-relaxed">{email.body}</pre>
+                </div>
+                <div className="flex items-center justify-between border-t border-white/[0.06] pt-4">
+                    <span className="font-mono text-[10px] text-text-tertiary">
+                        {email.word_count || '~150'} words · Optimized for response rate
+                    </span>
+                    <div className="flex gap-2">
+                        <button
+                            onClick={onCopy}
+                            className="px-4 py-2 rounded-lg bg-accent-amber/20 text-accent-amber font-mono text-xs hover:bg-accent-amber/30 transition-colors"
+                        >
+                            {copied ? '✓ Copied!' : '📋 Copy Email'}
+                        </button>
+                        {!emailSent && (
+                            <button
+                                onClick={onMarkSent}
+                                className="px-4 py-2 rounded-lg bg-accent-teal/20 text-accent-teal font-mono text-xs hover:bg-accent-teal/30 transition-colors"
+                            >
+                                I Sent This Email →
+                            </button>
+                        )}
+                    </div>
+                </div>
+                {emailSent && (
+                    <div className="mt-4 p-4 bg-accent-teal/5 border border-accent-teal/20 rounded-xl">
+                        <p className="font-mono text-xs text-accent-teal mb-1">✓ Email marked as sent</p>
+                        <p className="text-text-secondary text-sm">Follow-up window opens in 10 days. We&apos;ll remind you.</p>
+                    </div>
+                )}
+            </div>
+        </Section>
+    );
+}
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+    return (
+        <div className="mb-6">
+            <h3 className="font-display text-lg text-text-primary mb-4">{title}</h3>
+            {children}
+        </div>
+    );
+}
