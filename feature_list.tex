@@ -1,0 +1,336 @@
+% LabLens — Complete Feature List
+% AI-Powered Research Alignment Engine
+% Columbia x NYU Claude Builder Hackathon — April 12, 2026
+
+\documentclass{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{hyperref}
+
+\title{\textbf{LabLens — Feature List}}
+\author{Columbia $\times$ NYU Claude Builder Hackathon}
+\date{April 12, 2026}
+
+\begin{document}
+\maketitle
+
+\section{Product Overview}
+
+LabLens is an AI-powered research alignment engine that matches university students
+to professors whose active, funded research aligns with their intellectual interests.
+It goes beyond search or directory lookup — it is an intelligence layer that produces
+actionable research guidance, personalized outreach, and privacy-preserving matching.
+
+\section{Core ML Pipeline}
+
+\begin{enumerate}[label=\textbf{\arabic*.}]
+
+  \item \textbf{Intent Extraction (Claude)}
+    \begin{itemize}
+      \item Parses a student's free-text research interest into structured fields:
+            primary domain, specific topics, methodological interests, career direction,
+            search keywords, and an embedding-optimized description.
+      \item Adapts extraction based on student level (undergrad, master's, PhD applicant).
+    \end{itemize}
+
+  \item \textbf{Live Faculty Discovery (Linkup API)}
+    \begin{itemize}
+      \item Multi-query agentic search to find professors at a given university
+            in the student's research domain using live web data.
+      \item Deep profile retrieval per professor: lab website, 5 most recent papers
+            (2023--2025) with abstracts, active NSF/NIH grants, current PhD students
+            and postdocs, recent graduates and their next positions, and open
+            recruiting announcements.
+      \item Lab alumni discovery via LinkedIn intelligence (PhD graduates,
+            current positions, research topics).
+    \end{itemize}
+
+  \item \textbf{Semantic Embedding and Cosine Similarity Scoring}
+    \begin{itemize}
+      \item Uses OpenAI \texttt{text-embedding-3-small} (1536-dimensional vectors)
+            to embed both the student's interest and each professor's paper abstracts
+            and research statement.
+      \item Computes cosine similarity between the student vector and each paper vector.
+      \item Weighted scoring: 70\% from paper similarity (blend of max and average
+            across up to 5 recent papers), 30\% from research statement similarity.
+      \item Normalizes raw cosine (typically 0.1--0.9) to a 0--100 alignment score.
+      \item Reports per-paper scores, best-matching paper index, and confidence level
+            (high / medium / low based on number of papers embedded).
+      \item Ranks all candidate professors by alignment score descending.
+    \end{itemize}
+
+  \item \textbf{Claude AI Synthesis Layer}
+    \begin{itemize}
+      \item Generates all qualitative intelligence via Anthropic Claude Sonnet,
+            including professor cards, seed ideas, emails, skills gap analysis,
+            lab culture reports, and timing assessments.
+    \end{itemize}
+
+\end{enumerate}
+
+\section{Feature Modules}
+
+\subsection{Professor Intelligence Card}
+\begin{itemize}
+  \item Plain-language summary of the professor's \emph{current} research focus
+        (not career history).
+  \item Three specific open research questions the professor is actively investigating.
+  \item One-sentence explanation of why the student's interest aligns.
+  \item Best paper to read first, with a reason why.
+\end{itemize}
+
+\subsection{Semantic Alignment Score and ML Explainability Panel}
+\begin{itemize}
+  \item Animated alignment score badge per professor (Strong Match $\geq$ 85,
+        Good Match 70--84, Partial Match $<$ 70).
+  \item Animated alignment bar on each professor card.
+  \item Expandable ``How we scored this'' panel showing:
+        model used, method (cosine similarity over research embeddings),
+        raw cosine value, normalized score, and per-paper score breakdown
+        with visual bars.
+  \item Explicitly communicates that the score is a real ML computation,
+        not an LLM opinion.
+\end{itemize}
+
+\subsection{Personalized Seed Research Ideas}
+\begin{itemize}
+  \item Three original research seed ideas per professor, each sitting at the
+        intersection of the student's interest and the professor's open questions.
+  \item Each idea includes: a title, a specific research question, connection to the
+        professor's work, connection to the student's interest, and a difficulty
+        rating (undergrad / master's / PhD level).
+  \item Ideas are grounded in the professor's actual papers — never generic.
+\end{itemize}
+
+\subsection{Lab Culture Health Report}
+\begin{itemize}
+  \item Culture score (0--100) derived from publicly available signals.
+  \item Evidence-based strengths and neutral-language watch-fors.
+  \item Typical graduation timeline based on alumni data.
+  \item Mentorship style signals inferred from public data.
+  \item ``Best fit for'' student profile description.
+  \item Three suggested questions to ask in an interview.
+  \item Data sources: alumni time-to-graduation, student first-authorship rate,
+        alumni destination diversity, lab size, public engagement, and public mentions.
+\end{itemize}
+
+\subsection{Lab Alumni Trail}
+\begin{itemize}
+  \item Tracks where past PhD graduates and postdocs went after leaving the lab.
+  \item Shows each alumnus's name, graduation year, current role, employer,
+        and research topics.
+  \item Summary statistics: industry vs.\ academia placement count, average
+        time in lab.
+\end{itemize}
+
+\subsection{Timing Intelligence Engine}
+\begin{itemize}
+  \item Determines the optimal timing for a student to contact a professor.
+  \item Inputs: current date, semester and week, proximity to grant deadlines,
+        grant deadline type, days since last arXiv submission, upcoming conference
+        deadlines, and whether it is summer.
+  \item Outputs: timing score (0--100), verdict (excellent / good / caution / wait)
+        with color coding, primary reason, detailed explanation, specific optimal
+        send time (e.g., ``Tuesday April 14 at 7:35 AM''), next contact window
+        if verdict is ``wait'', and timing red flags.
+  \item Calendar visualization showing semester position, grant deadlines,
+        conference deadlines, and highlighted optimal contact windows.
+\end{itemize}
+
+\subsection{Skills Gap Analysis}
+\begin{itemize}
+  \item Compares the student's background against the professor's lab requirements
+        (methods, programming tools, mathematical frameworks from papers).
+  \item Lists required skills with importance level (required / helpful / bonus)
+        and whether the student already has each.
+  \item Identifies critical gaps and existing strengths.
+  \item Provides a two-week prep plan with specific daily learning tasks and
+        free resource links.
+  \item Suggests how to frame the student's background in the email to
+        minimize gap concerns.
+\end{itemize}
+
+\subsection{Grant Opportunity Matching}
+\begin{itemize}
+  \item Matches relevant fellowships (NSF GRFP, Hertz, Ford, etc.) to the student.
+  \item Each match includes: name, amount, deadline, fit score, and
+        ``Why this fits you'' text.
+  \item Shows the professor's active grants that fund RAs (with amounts
+        from NSF Awards API).
+  \item Highlights when applying to a matched grant would strengthen an
+        RA candidacy.
+\end{itemize}
+
+\subsection{Cold Email Generator}
+\begin{itemize}
+  \item Generates a personalized cold email draft per professor.
+  \item Subject line references a specific paper title — never generic.
+  \item Opening shows the student read the paper (references a specific finding
+        or method).
+  \item Body connects the student's background to a seed idea as an
+        intellectual hook.
+  \item Ask offers both a 15-minute call and email reply to reduce friction.
+  \item Hard-capped at 180 words, enforced programmatically.
+  \item Avoids clich\'{e} phrases (``I am reaching out'', ``Hope this finds you well'').
+  \item Never starts with ``I'' — starts with something about the professor's work.
+  \item Tone: peer-to-peer curiosity, not job application.
+  \item Copy-to-clipboard button and ``Edit \& Personalize'' toggle.
+\end{itemize}
+
+\subsection{Follow-Up Tracker}
+\begin{itemize}
+  \item State machine: SENT $\to$ WAITING $\to$ FOLLOW\_UP\_READY $\to$
+        FOLLOWED\_UP $\to$ REPLIED / ARCHIVED.
+  \item Tracks email sent date, shows countdown to follow-up window (10 days).
+  \item Auto-generates a follow-up email draft when the window opens.
+\end{itemize}
+
+\subsection{PhD Program Matching}
+\begin{itemize}
+  \item Separate flow triggered by ``I'm applying to PhD programs'' toggle.
+  \item Ranks top 8 PhD programs using the same embedding pipeline.
+  \item Per program: research fit score, number of active professors in the
+        student's area, placement rate, average time-to-graduation, top 2
+        professors to contact pre-application, and an application strategy note.
+  \item Uses CSRankings data (via Linkup), NSF placement data, and semantic
+        embeddings.
+\end{itemize}
+
+\section{Novel ML Contribution: Three-Tier Privacy-Preserving Matching}
+
+\subsection{Problem Statement}
+Professors often have confidential research projects (industry NDA, pre-publication,
+grant-pending, politically sensitive) that they cannot publicly describe but for which
+they need specific types of collaborators. No existing system enables matching across
+this confidentiality boundary.
+
+\subsection{Three-Tier Data Architecture}
+\begin{enumerate}[label=\textbf{Tier \arabic*:}]
+  \item \textbf{Public (weight 50\%)} — Published papers, abstracts, lab website,
+        NSF/NIH grants, arXiv submissions, public engagement. Full Linkup search
+        and full embedding.
+  \item \textbf{Semi-Public (weight 30\%)} — Workshop papers, grant abstracts,
+        course syllabi, GitHub repos, collaborator acknowledgments. Requires
+        Linkup deep search to surface.
+  \item \textbf{Private / Confidential (weight 20\%)} — Industry-funded projects,
+        pre-submission work, unawarded grant proposals, sensitive topics. Professor
+        inputs only ``what type of mind I need'' (skills and intellectual approach),
+        \emph{not} what the project is. A differentially private embedding is
+        generated and the raw text is immediately and irreversibly discarded.
+\end{enumerate}
+
+\subsection{Differential Privacy Mechanism}
+\begin{itemize}
+  \item Gaussian noise injection calibrated to a privacy budget $\varepsilon$
+        (default $\varepsilon = 1.0$; options: 0.5 high privacy, 1.0 balanced,
+        2.0 lower privacy / higher accuracy).
+  \item L2 sensitivity of unit-normalized embeddings bounded by 2.
+  \item Noise scale = $2 / \varepsilon$; noised embedding re-normalized to the
+        unit sphere to preserve angular relationships for cosine similarity.
+  \item Raw text is never stored, never logged, never returned — only the noised
+        vector persists.
+  \item Privacy middleware blocks request body logging on the private signal endpoint.
+\end{itemize}
+
+\subsection{Three-Tier Composite Scoring}
+\begin{itemize}
+  \item When a private signal exists: composite = $0.50 \times T1 + 0.30 \times T2
+        + 0.20 \times T3$.
+  \item When no private signal: weights renormalize to $0.625 \times T1 +
+        0.375 \times T2$.
+  \item Agreement bonus: +3 points if Tier 3 and Tier 1 scores agree within 15 points;
+        $-2$ penalty otherwise (reflects noise uncertainty).
+  \item Students see a higher alignment score with a lock badge and the message
+        ``This professor has indicated additional research interest beyond their
+        public profile that aligns with you'' — without ever seeing what was written.
+\end{itemize}
+
+\subsection{Professor Portal}
+\begin{itemize}
+  \item Dedicated \texttt{/professor} route for professors to manage their profile.
+  \item Three-tier profile visualizer showing data coverage across tiers.
+  \item Private signal input form with privacy level selector and explicit
+        ``text discarded'' confirmation flow.
+  \item Professors can delete their private signal at any time.
+\end{itemize}
+
+\section{User Interface and Pages}
+
+\subsection{Page 1: Landing / Search}
+\begin{itemize}
+  \item Full-screen dark hero with animated dot grid background.
+  \item Large textarea for natural-language interest input with rotating
+        placeholder examples.
+  \item University selector dropdown (Columbia, NYU, MIT, Stanford, CMU,
+        UC Berkeley, Harvard — demonstrating generalizability).
+  \item Student level selector (Undergrad / Master's / PhD Applicant).
+  \item Feature badges: Live research data, ML alignment scoring, Linkup Search,
+        Claude AI.
+\end{itemize}
+
+\subsection{Page 2: Results}
+\begin{itemize}
+  \item Left sidebar for filters and search refinement.
+  \item Professor cards in a 2-column grid.
+  \item Sort options: Best Match / Most Approachable / Newest Hire.
+  \item Filter pills by department.
+  \item Each card shows: alignment score badge, timing badge, current focus
+        summary, animated alignment bar, seed idea count, alumni count,
+        timing verdict, and grant count.
+\end{itemize}
+
+\subsection{Page 3: Professor Deep Dive}
+\begin{itemize}
+  \item Six tabbed sections, each lazy-loaded:
+        (1) Research Intelligence — full card, seed ideas, best paper, ML score breakdown;
+        (2) Lab Intelligence — culture report and alumni trail side by side;
+        (3) Timing \& Approach — timing score, calendar visualization, optimal send time;
+        (4) Skills Gap — lab requirements vs.\ student skills, two-week prep plan;
+        (5) Grant Opportunities — matched fellowships and professor's active grants;
+        (6) Your Email — generated email, copy button, edit mode, follow-up tracker.
+\end{itemize}
+
+\subsection{Page 4: PhD Program Matching}
+\begin{itemize}
+  \item Top 8 programs ranked by embedding-based research fit score.
+  \item Per-program details and professor contact strategy links.
+\end{itemize}
+
+\subsection{Page 5: Professor Portal}
+\begin{itemize}
+  \item Three-tier data visualizer and private signal management interface.
+\end{itemize}
+
+\section{Loading, Error Handling, and UX Polish}
+
+\begin{itemize}
+  \item Five-step loading sequence with progress descriptions (searching faculty
+        data, reading publications, computing alignment, analyzing culture,
+        generating roadmap).
+  \item Skeleton loaders with shimmer animation (no spinners).
+  \item Graceful degradation: ``Limited public data'' badge when Linkup returns
+        nothing; keyword-match fallback when embedding fails; refresh button
+        when NSF API times out.
+  \item Score numbers animate counting up on load; professor cards stagger
+        in with 150ms delay; alignment bars animate width on mount; cards
+        elevate with subtle glow on hover.
+  \item Pre-loaded demo scenarios for reliable live demonstrations.
+  \item Mobile responsive design.
+\end{itemize}
+
+\section{Tech Stack Summary}
+
+\begin{itemize}
+  \item \textbf{Frontend:} Next.js 14+ with TypeScript, Tailwind CSS, Framer Motion
+  \item \textbf{Backend:} Python FastAPI
+  \item \textbf{ML Core:} OpenAI text-embedding-3-small for semantic embeddings;
+        NumPy for cosine similarity and Gaussian differential privacy
+  \item \textbf{Search:} Linkup API (deep agentic search for live professor data)
+  \item \textbf{AI Synthesis:} Anthropic Claude Sonnet for reasoning, summarization,
+        seed idea generation, and email drafting
+  \item \textbf{Public Data APIs:} NSF Awards API, arXiv API, academic calendar logic
+  \item \textbf{Database:} In-memory for hackathon (no auth)
+\end{itemize}
+
+\end{document}
