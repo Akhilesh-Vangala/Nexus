@@ -347,3 +347,106 @@ Return JSON exactly (no other text):
   "contact_target": "professor|phd_student|event|github"
 }}"""
     return await claude_json(prompt)
+
+
+async def generate_master_intelligence(
+    professor_name: str,
+    university: str,
+    department: str,
+    papers: list[str],
+    grants: list[str],
+    student_interest: str,
+    student_background: str,
+    student_level: str,
+    alignment_score: float,
+    research_statement: str = "",
+    arxiv_data: dict = None,
+    today: str = "2026-04-12",
+) -> dict:
+    """
+    MASTER PROMPT: Generate ALL intelligence for a professor in ONE Claude call.
+    Replaces 4 separate calls (card + seeds + email + timing) → 1 call.
+    Drops latency from ~12-20s to ~3-5s per professor.
+    """
+    arxiv_data = arxiv_data or {}
+    papers_str = json.dumps(papers[:5]) if papers else "[]"
+    grants_str = json.dumps(grants[:3]) if grants else "[]"
+
+    days_since_arxiv = "unknown"
+    if arxiv_data.get("papers_in_window"):
+        days_since_arxiv = f"Most recent: {arxiv_data['papers_in_window'][0].get('submitted', 'unknown')}"
+
+    month = int(today.split("-")[1])
+    semester = "Spring" if month <= 5 else ("Summer" if month <= 8 else "Fall")
+
+    prompt = f"""You are generating a COMPLETE intelligence package for a research student about a professor.
+One JSON response covering ALL dimensions — card, seed ideas, email draft, and timing.
+
+PROFESSOR: {professor_name}, {university}, {department}
+Recent papers/research: {papers_str}
+Active grants: {grants_str}
+Research profile: {research_statement[:1500]}
+
+STUDENT interest: {student_interest}
+Student level: {student_level}
+Student background: {student_background or "Not specified"}
+Semantic alignment score: {alignment_score}/100
+
+TIMING CONTEXT:
+Today: {today} | Semester: {semester}
+ArXiv activity: {days_since_arxiv}
+Grant count: {len(grants)}
+
+Return JSON exactly (no other text):
+{{
+  "current_focus": "2-3 sentence plain English summary of what they're working on RIGHT NOW",
+  "open_questions": ["3 specific open research questions this professor is actively investigating"],
+  "why_aligned": "1 sentence explaining exactly why this student's interest aligns",
+  "best_paper_to_read": {{"title": "actual paper title from the data", "why": "read this first because..."}},
+  "seed_ideas": [
+    {{
+      "title": "Short catchy title",
+      "question": "The specific research question as one sentence",
+      "connection_to_professor": "Why this professor is the right person",
+      "connection_to_student": "Why this matches the student's interest",
+      "difficulty": "undergrad_suitable|masters_suitable|phd_level"
+    }},
+    {{
+      "title": "Second seed idea title",
+      "question": "Second research question",
+      "connection_to_professor": "Why this professor",
+      "connection_to_student": "Why this student",
+      "difficulty": "undergrad_suitable|masters_suitable|phd_level"
+    }},
+    {{
+      "title": "Third seed idea title",
+      "question": "Third research question",
+      "connection_to_professor": "Why this professor",
+      "connection_to_student": "Why this student",
+      "difficulty": "undergrad_suitable|masters_suitable|phd_level"
+    }}
+  ],
+  "email_draft": {{
+    "subject": "Subject referencing their SPECIFIC paper title",
+    "body": "Cold email: max 150 words. Start with something about their work (never 'I am reaching out'). Reference a specific finding. Include background + seed idea as intellectual hook. Ask for 15 min call OR email. Peer-to-peer curiosity tone.",
+    "word_count": 0
+  }},
+  "timing": {{
+    "timing_score": 75,
+    "verdict": "excellent|good|caution|wait",
+    "verdict_color": "teal|amber|coral",
+    "primary_reason": "one sentence",
+    "details": "2-3 sentence explanation",
+    "optimal_send_time": "e.g. Tuesday April 14 at 7:30 AM",
+    "next_window": null,
+    "red_flags": []
+  }}
+}}
+
+RULES:
+- Only reference papers in the provided data — never invent citations
+- Seed ideas must sit at the intersection of student interest AND professor's open questions
+- Email: never start with "I", never use "reaching out" or "hope this finds you well"
+- Be specific and grounded in the actual data, not generic"""
+
+    return await claude_json(prompt, max_tokens=4096)

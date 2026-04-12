@@ -47,103 +47,136 @@ class PrivateSignalRequest(BaseModel):
 
 @router.post("/professor/deep")
 async def professor_deep_dive(request: ProfessorDeepRequest):
-    """Full deep dive on one professor — all feature layers."""
-    
-    # Fetch deep profile from Linkup
-    deep_profile = await get_professor_deep_profile(
+    """Full deep dive on one professor — all feature layers.
+    OPTIMIZED: maximum parallelization across all independent calls.
+    """
+    import asyncio
+
+    # WAVE 1: All data fetches in parallel (Linkup + arXiv + NSF)
+    deep_profile_task = get_professor_deep_profile(
         professor_name=request.professor_name,
-        university=request.university
+        university=request.university,
     )
-    
-    # Fetch alumni data
-    alumni_data = await get_lab_alumni(
+    alumni_task = get_lab_alumni(
         professor_name=request.professor_name,
-        university=request.university
+        university=request.university,
     )
-    
-    # Verification
-    arxiv_data = await check_arxiv_activity(request.professor_name)
-    nsf_data = await check_nsf_active_grants(request.professor_name)
-    
+    arxiv_task = check_arxiv_activity(request.professor_name)
+    nsf_task = check_nsf_active_grants(request.professor_name)
+
+    deep_profile, alumni_data, arxiv_data, nsf_data = await asyncio.gather(
+        deep_profile_task, alumni_task, arxiv_task, nsf_task,
+        return_exceptions=True,
+    )
+    # Handle exceptions gracefully
+    if isinstance(deep_profile, Exception):
+        deep_profile = ""
+    if isinstance(alumni_data, Exception):
+        alumni_data = ""
+    if isinstance(arxiv_data, Exception):
+        arxiv_data = {"active": False, "papers_in_window": [], "total_found": 0}
+    if isinstance(nsf_data, Exception):
+        nsf_data = {"has_active_grants": False, "active_grants": []}
+
     papers = arxiv_data.get("papers_in_window", [])
     paper_abstracts = [p.get("abstract", "") for p in papers]
     paper_titles = [p.get("title", "") for p in papers]
     grants = nsf_data.get("active_grants", [])
-    
-    # Compute alignment
+
+    # Alignment (fast, local ML — not a bottleneck)
     alignment = await compute_alignment_score(
         student_interest_text=request.student_interest,
         professor_paper_abstracts=paper_abstracts,
-        professor_research_statement=deep_profile[:1000]
+        professor_research_statement=deep_profile[:1000] if isinstance(deep_profile, str) else "",
     )
-    
-    # Generate all intelligence layers
-    card = await generate_professor_card(
+    score = alignment.get("alignment_score", 0)
+
+    # WAVE 2: Card + culture + skills + timing + approach ALL in parallel
+    card_task = generate_professor_card(
         professor_name=request.professor_name,
         university=request.university,
         department=request.department,
         papers=paper_titles,
         grants=[g.get("title", "") for g in grants],
         student_interest=request.student_interest,
-        alignment_score=alignment.get("alignment_score", 0),
-        deep_profile=deep_profile
+        alignment_score=score,
+        deep_profile=deep_profile,
     )
-    
-    seeds = await generate_seed_ideas(
-        current_focus=card.get("current_focus", ""),
-        open_questions=card.get("open_questions", []),
-        best_paper_abstract=paper_abstracts[0] if paper_abstracts else "",
-        student_background=request.student_background,
-        student_interest=request.student_interest,
-        student_level=request.student_level,
-        alignment_score=alignment.get("alignment_score", 0)
-    )
-    
-    best_paper = card.get("best_paper_to_read", {})
-    seed_ideas = seeds.get("ideas", [])
-    
-    email = await generate_email_draft(
-        professor_name=request.professor_name,
-        paper_title=best_paper.get("title", paper_titles[0] if paper_titles else ""),
-        paper_year="2024-2025",
-        paper_key_finding=best_paper.get("why", ""),
-        student_level=request.student_level,
-        student_background=request.student_background,
-        seed_idea=seed_ideas[0].get("question", "") if seed_ideas else "",
-        alignment_score=alignment.get("alignment_score", 0)
-    )
-    
-    culture = await generate_lab_culture(
+    culture_task = generate_lab_culture(
         professor_name=request.professor_name,
         alumni_data=alumni_data,
         lab_size_data=deep_profile,
-        deep_profile=deep_profile
+        deep_profile=deep_profile,
     )
-    
-    skills = await generate_skills_gap(
+    skills_task = generate_skills_gap(
         professor_papers=paper_titles[:3],
         student_background=request.student_background,
         student_level=request.student_level,
-        deep_profile=deep_profile
+        deep_profile=deep_profile,
     )
-    
-    timing = await generate_timing_analysis(
+    timing_task = generate_timing_analysis(
         professor_name=request.professor_name,
         arxiv_data=arxiv_data,
         grants_data=grants,
-        today="2026-04-12"
+        today="2026-04-12",
     )
-    
-    approach = await generate_approach_strategy(
+    approach_task = generate_approach_strategy(
         professor_name=request.professor_name,
         lab_size="unknown",
         career_stage="established",
         hiring_signals=str(nsf_data.get("hiring_signal", False)),
         student_level=request.student_level,
         student_background=request.student_background,
-        deep_profile=deep_profile
+        deep_profile=deep_profile,
     )
-    
+
+    card, culture, skills, timing, approach = await asyncio.gather(
+        card_task, culture_task, skills_task, timing_task, approach_task,
+        return_exceptions=True,
+    )
+    # Fallback for any failed Claude calls
+    if isinstance(card, Exception):
+        card = {}
+    if isinstance(culture, Exception):
+        culture = {}
+    if isinstance(skills, Exception):
+        skills = {}
+    if isinstance(timing, Exception):
+        timing = {}
+    if isinstance(approach, Exception):
+        approach = {}
+
+    # WAVE 3: Seeds + Email in parallel (depend on card output)
+    best_paper = card.get("best_paper_to_read", {})
+
+    seeds_task = generate_seed_ideas(
+        current_focus=card.get("current_focus", ""),
+        open_questions=card.get("open_questions", []),
+        best_paper_abstract=paper_abstracts[0] if paper_abstracts else "",
+        student_background=request.student_background,
+        student_interest=request.student_interest,
+        student_level=request.student_level,
+        alignment_score=score,
+    )
+    email_task = generate_email_draft(
+        professor_name=request.professor_name,
+        paper_title=best_paper.get("title", paper_titles[0] if paper_titles else ""),
+        paper_year="2024-2025",
+        paper_key_finding=best_paper.get("why", ""),
+        student_level=request.student_level,
+        student_background=request.student_background,
+        seed_idea=card.get("open_questions", [""])[0] if card.get("open_questions") else "",
+        alignment_score=score,
+    )
+
+    seeds, email = await asyncio.gather(seeds_task, email_task, return_exceptions=True)
+    if isinstance(seeds, Exception):
+        seeds = {"ideas": []}
+    if isinstance(email, Exception):
+        email = {}
+
+    seed_ideas = seeds.get("ideas", [])
+
     return {
         "name": request.professor_name,
         "university": request.university,
@@ -152,7 +185,7 @@ async def professor_deep_dive(request: ProfessorDeepRequest):
         "open_questions": card.get("open_questions", []),
         "why_aligned": card.get("why_aligned", ""),
         "best_paper_to_read": card.get("best_paper_to_read"),
-        "alignment_score": alignment.get("alignment_score", 0),
+        "alignment_score": score,
         "alignment_detail": alignment,
         "papers": papers,
         "grants": grants,
@@ -163,7 +196,7 @@ async def professor_deep_dive(request: ProfessorDeepRequest):
         "timing": timing,
         "approach_strategy": approach,
         "alumni_data": alumni_data,
-        "deep_profile_summary": deep_profile[:500],
+        "deep_profile_summary": deep_profile[:500] if isinstance(deep_profile, str) else "",
     }
 
 

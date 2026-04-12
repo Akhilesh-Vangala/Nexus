@@ -4,7 +4,7 @@ import SiteHeader from '@/components/SiteHeader';
 import PageBackdrop from '@/components/PageBackdrop';
 
 export const metadata = {
-    title: 'How LabLens works — LabLens',
+    title: 'How Nexus works — Nexus',
     description: 'Pipeline: intent extraction, Linkup search, verification, embeddings, and grounded synthesis.',
 };
 
@@ -105,14 +105,6 @@ export default function MethodologyPage() {
                         </li>
                     ))}
                 </ol>
-
-                <div className="mt-10 rounded-2xl border border-accent-purple/20 bg-gradient-to-br from-accent-purple/10 to-transparent p-6">
-                    <p className="font-mono text-[10px] uppercase tracking-wider text-accent-purple">Optional</p>
-                    <p className="mt-2 font-body text-sm text-text-secondary">
-                        The professor portal registers a noisy embedding of &ldquo;skills needed&rdquo; — raw text is not
-                        retained for matching.
-                    </p>
-                </div>
 
                 <Link
                     href="/"

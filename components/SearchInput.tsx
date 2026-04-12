@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import type { SchoolScope } from '@/lib/searchSession';
+import { apiUrl } from '@/lib/api';
 
 const PLACEHOLDERS = [
     "I'm fascinated by how language models fail at causal reasoning...",
@@ -36,12 +37,10 @@ export type SearchFormPayload = {
 
 interface SearchInputProps {
     onSearch: (payload: SearchFormPayload) => void;
-    /** UI-only: jump to results with demo fixtures (no API). */
-    onDemoPreview?: () => void;
     isLoading?: boolean;
 }
 
-export default function SearchInput({ onSearch, onDemoPreview, isLoading = false }: SearchInputProps) {
+export default function SearchInput({ onSearch, isLoading = false }: SearchInputProps) {
     const [query, setQuery] = useState('');
     const [schoolScope, setSchoolScope] = useState<SchoolScope>('columbia');
     const [level, setLevel] = useState('masters');
@@ -52,7 +51,11 @@ export default function SearchInput({ onSearch, onDemoPreview, isLoading = false
     const [requireGrant, setRequireGrant] = useState(false);
     const [minAlignment, setMinAlignment] = useState(0);
     const [placeholderIdx, setPlaceholderIdx] = useState(0);
+    const [resumeFile, setResumeFile] = useState<File | null>(null);
+    const [resumeParsing, setResumeParsing] = useState(false);
+    const [resumeStatus, setResumeStatus] = useState<'idle' | 'parsing' | 'done' | 'error'>('idle');
     const textareaRef = useRef<HTMLTextAreaElement>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         const timer = setInterval(() => {
@@ -60,6 +63,50 @@ export default function SearchInput({ onSearch, onDemoPreview, isLoading = false
         }, 3500);
         return () => clearInterval(timer);
     }, []);
+
+    const handleResumeUpload = async (file: File) => {
+        setResumeFile(file);
+        setResumeParsing(true);
+        setResumeStatus('parsing');
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+            const res = await fetch(apiUrl('/api/resume/parse'), {
+                method: 'POST',
+                body: formData,
+            });
+            if (!res.ok) throw new Error(`Upload failed: ${res.status}`);
+            const data = await res.json();
+            if (data.error) throw new Error(data.error);
+
+            // Auto-fill background from parsed resume
+            if (data.student_background) {
+                setBackground(data.student_background);
+                setShowBackground(true);
+            }
+            // If query is empty, suggest one from the resume
+            if (!query.trim() && data.suggested_query) {
+                setQuery(data.suggested_query);
+            }
+            // Auto-detect education level
+            if (data.education_level) {
+                const levelMap: Record<string, string> = {
+                    undergrad: 'undergrad',
+                    masters: 'masters',
+                    phd_applicant: 'phd_applicant',
+                };
+                if (levelMap[data.education_level]) {
+                    setLevel(levelMap[data.education_level]);
+                }
+            }
+            setResumeStatus('done');
+        } catch (err) {
+            console.error('Resume parse error:', err);
+            setResumeStatus('error');
+        } finally {
+            setResumeParsing(false);
+        }
+    };
 
     const handleSubmit = () => {
         if (!query.trim() || isLoading) return;
@@ -76,10 +123,10 @@ export default function SearchInput({ onSearch, onDemoPreview, isLoading = false
 
     return (
         <div className="mx-auto w-full max-w-2xl">
-            <p className="mb-2 px-1 font-mono text-[10px] uppercase tracking-[0.2em] text-text-tertiary">
+            <p className="mb-2 text-center font-mono text-[10px] uppercase tracking-[0.2em] text-text-tertiary">
                 Quick starters
             </p>
-            <div className="mb-5 flex flex-wrap justify-center gap-2 sm:justify-start">
+            <div className="mb-5 flex flex-wrap justify-center gap-2">
                 {TEMPLATES.map((t) => (
                     <button
                         type="button"
@@ -230,13 +277,59 @@ export default function SearchInput({ onSearch, onDemoPreview, isLoading = false
             </div>
 
             <div className="mb-4">
-                <button
-                    type="button"
-                    onClick={() => setShowBackground(!showBackground)}
-                    className="text-xs font-mono text-text-tertiary transition-colors hover:text-text-secondary"
-                >
-                    {showBackground ? '− Hide background' : '+ Technical background (optional)'}
-                </button>
+                <div className="flex items-center gap-3">
+                    <button
+                        type="button"
+                        onClick={() => setShowBackground(!showBackground)}
+                        className="text-xs font-mono text-text-tertiary transition-colors hover:text-text-secondary"
+                    >
+                        {showBackground ? '− Hide background' : '+ Technical background (optional)'}
+                    </button>
+                    <span className="text-text-tertiary/40 text-[10px]">or</span>
+                    <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept=".pdf,.txt,.doc,.docx"
+                        className="hidden"
+                        onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) handleResumeUpload(file);
+                        }}
+                    />
+                    <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={resumeParsing}
+                        className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 font-mono text-[11px] transition-all ${
+                            resumeStatus === 'done'
+                                ? 'border-accent-teal/30 bg-accent-teal/10 text-accent-teal'
+                                : resumeStatus === 'error'
+                                ? 'border-red-400/30 bg-red-400/10 text-red-400'
+                                : 'border-white/[0.1] bg-white/[0.04] text-text-tertiary hover:border-accent-amber/30 hover:text-accent-amber'
+                        }`}
+                    >
+                        {resumeParsing ? (
+                            <>
+                                <span className="h-3 w-3 animate-spin rounded-full border-[1.5px] border-current/20 border-t-current" />
+                                Parsing…
+                            </>
+                        ) : resumeStatus === 'done' ? (
+                            <>
+                                <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                </svg>
+                                {resumeFile?.name ? resumeFile.name.slice(0, 20) : 'Resume loaded'}
+                            </>
+                        ) : (
+                            <>
+                                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                                </svg>
+                                Upload resume
+                            </>
+                        )}
+                    </button>
+                </div>
                 {showBackground && (
                     <textarea
                         value={background}
@@ -245,6 +338,11 @@ export default function SearchInput({ onSearch, onDemoPreview, isLoading = false
                         className="mt-2 min-h-[60px] w-full resize-none rounded-xl border border-white/[0.08] bg-bg-secondary px-4 py-3 font-body text-sm text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-accent-teal/35"
                         rows={2}
                     />
+                )}
+                {resumeStatus === 'error' && (
+                    <p className="mt-1.5 font-mono text-[10px] text-red-400">
+                        Failed to parse resume. Try a different file or fill in manually.
+                    </p>
                 )}
             </div>
 
@@ -268,20 +366,6 @@ export default function SearchInput({ onSearch, onDemoPreview, isLoading = false
                 Linkup · arXiv · NSF · embeddings · Claude · ⌘ / Ctrl + Enter
             </p>
 
-            {onDemoPreview && (
-                <div className="mt-6 border-t border-white/[0.06] pt-6">
-                    <button
-                        type="button"
-                        onClick={onDemoPreview}
-                        className="w-full rounded-2xl border border-accent-purple/30 bg-accent-purple/10 py-3 font-mono text-xs uppercase tracking-wider text-accent-purple transition-all hover:border-accent-purple/50 hover:bg-accent-purple/15"
-                    >
-                        Explore interface — demo data (no API)
-                    </button>
-                    <p className="mt-2 text-center font-body text-[11px] text-text-tertiary">
-                        Builds every screen with sample professors so you can polish UI before the pipeline is wired.
-                    </p>
-                </div>
-            )}
         </div>
     );
 }

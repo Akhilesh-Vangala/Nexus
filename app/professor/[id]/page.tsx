@@ -15,12 +15,12 @@ import { loadLastSearchResults } from '@/lib/searchSession';
 import { isUiDemoClient } from '@/lib/ui-demo';
 
 const TABS = [
-    { id: 'research', label: 'Research Intelligence', icon: '🔬' },
-    { id: 'lab', label: 'Lab Intelligence', icon: '🏛️' },
-    { id: 'timing', label: 'Timing & Approach', icon: '⏰' },
-    { id: 'skills', label: 'Skills Gap', icon: '📊' },
-    { id: 'grants', label: 'Grants', icon: '💰' },
-    { id: 'email', label: 'Your Email', icon: '✉️' },
+    { id: 'research', label: 'Research Intelligence', icon: '' },
+    { id: 'lab', label: 'Lab Intelligence', icon: '' },
+    { id: 'timing', label: 'Timing & Approach', icon: '' },
+    { id: 'skills', label: 'Skills Gap', icon: '' },
+    { id: 'grants', label: 'Grants', icon: '' },
+    { id: 'email', label: 'Your Email', icon: '' },
 ];
 
 export default function ProfessorPage() {
@@ -140,7 +140,7 @@ export default function ProfessorPage() {
 
                     {data.why_aligned && (
                         <p className="mt-4 text-accent-teal text-sm font-body bg-accent-teal/5 border border-accent-teal/20 rounded-xl px-4 py-3">
-                            ✦ {data.why_aligned}
+                            {data.why_aligned}
                         </p>
                     )}
 
@@ -174,7 +174,6 @@ export default function ProfessorPage() {
                                     : 'border-white/[0.08] text-text-tertiary hover:border-white/15 hover:bg-white/[0.04] hover:text-text-secondary'
                             }`}
                         >
-                            <span className="mr-1.5 opacity-90">{tab.icon}</span>
                             {tab.label}
                         </button>
                     ))}
@@ -215,10 +214,7 @@ function SimilarFromSearch({ currentId }: { currentId: string }) {
 
     return (
         <section className="mt-16 border-t border-white/[0.06] pt-10">
-            <h2 className="mb-2 font-display text-xl text-text-primary">Other matches from this search</h2>
-            <p className="mb-6 font-body text-sm text-text-tertiary">
-                Same run — switch profiles to compare fit before you email.
-            </p>
+            <h2 className="mb-6 font-display text-xl text-text-primary">Other matches from this search</h2>
             <div className="grid gap-4 md:grid-cols-2">
                 {others.map((p) => (
                     <button
@@ -270,13 +266,12 @@ function ResearchTab({ data }: { data: any }) {
 
             {/* Seed Ideas */}
             {data.seed_ideas?.length > 0 && (
-                <Section title="Research Seed Ideas">
+                <Section title="Research Ideas">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         {data.seed_ideas.map((idea: any, i: number) => (
                             <div key={i} className="glass-card p-5">
                                 <div className="flex items-center gap-2 mb-3">
-                                    <span className="text-accent-amber">💡</span>
-                                    <span className="font-mono text-xs text-accent-amber">Seed Idea {i + 1}</span>
+                                    <span className="font-mono text-xs text-accent-amber">Idea {i + 1}</span>
                                 </div>
                                 <h4 className="font-body font-semibold text-text-primary text-sm mb-2">{idea.title}</h4>
                                 <p className="text-text-secondary text-xs leading-relaxed mb-3">{idea.question}</p>
@@ -297,7 +292,7 @@ function ResearchTab({ data }: { data: any }) {
             )}
 
             {/* ML Explainability Panel */}
-            <Section title="How LabLens computed this score">
+            <Section title="How Nexus computed this score">
                 <div className="glass-card space-y-3 border-accent-purple/20 p-5 font-mono text-xs">
                     <p className="text-text-tertiary">
                         Model:{' '}
@@ -508,7 +503,7 @@ function GrantsTab({ data }: { data: any }) {
                             </div>
                             {g.abstract && <p className="text-text-secondary text-xs leading-relaxed mb-2">{g.abstract}</p>}
                             {g.expires && <p className="text-text-tertiary font-mono text-[10px]">Expires: {g.expires}</p>}
-                            <p className="text-accent-teal text-xs mt-2">💡 Active grant = this professor likely needs students</p>
+                            <p className="text-accent-teal text-xs mt-2">Active grant — this professor likely needs students</p>
                         </div>
                     ))}
                 </div>

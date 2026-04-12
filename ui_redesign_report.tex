@@ -1,0 +1,265 @@
+\documentclass[11pt,letterpaper]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{fancyhdr}
+\usepackage{graphicx}
+
+% Colors
+\definecolor{accent}{HTML}{6366F1}
+\definecolor{darkbg}{HTML}{09090B}
+\definecolor{amber}{HTML}{F59E0B}
+\definecolor{cyan}{HTML}{22D3EE}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=accent,
+    urlcolor=accent,
+    citecolor=accent
+}
+
+\titleformat{\section}{\Large\bfseries}{}{0pt}{}[\titlerule]
+\titleformat{\subsection}{\large\bfseries}{}{0pt}{}
+
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{LabLens UI Redesign Report}
+\lhead{Columbia Claude Hackathon 2026}
+\rfoot{Page \thepage}
+
+\begin{document}
+
+\begin{center}
+    {\LARGE\bfseries LabLens UI Redesign Report}\\[0.5em]
+    {\large Columbia Claude Hackathon --- April 2026}\\[0.3em]
+    {\normalsize Competitive Analysis \& Improvement Strategy}
+\end{center}
+
+\vspace{1em}
+
+\section{Project Architecture Summary}
+
+LabLens is an AI-powered research alignment engine that helps graduate students find matching professors.
+
+\begin{itemize}[nosep]
+    \item \textbf{Frontend:} Next.js 14, Tailwind CSS, Framer Motion, TypeScript (4 pages)
+    \item \textbf{Backend:} Python FastAPI + sentence-transformers (ML) + Claude Sonnet + Linkup API
+    \item \textbf{External APIs:} arXiv (papers), NSF (grants), Linkup (live web search)
+    \item \textbf{Novel Feature:} Differentially private three-tier matching with Gaussian noise mechanism
+    \item \textbf{Pipeline:} 6-stage (Intent $\rightarrow$ Search $\rightarrow$ Verify $\rightarrow$ Embed $\rightarrow$ Rank $\rightarrow$ Synthesize)
+\end{itemize}
+
+\section{Current UI Problems}
+
+\begin{longtable}{>{\raggedright\arraybackslash}p{4.5cm} p{9cm}}
+\toprule
+\textbf{Issue} & \textbf{Why It Hurts} \\
+\midrule
+Playfair Display (serif) headings & Reads ``luxury editorial,'' not ``intelligent research tool'' \\
+4 competing accent colors & Amber, teal, coral, purple all fight for attention --- no visual hierarchy \\
+Animated dot-grid background & Distracting pulsing animation competes with content \\
+Emoji badges & Brain, lightning, chain emojis look unprofessional in academic context \\
+Glass-morphism too transparent & Cards at \texttt{rgba(17,24,39,0.6)} look washed out against \texttt{\#0B0E1A} \\
+JetBrains Mono overused & Monospace on badges, buttons, helper text --- should be data-only \\
+\bottomrule
+\end{longtable}
+
+\section{Recommended UI References}
+
+\subsection{1. Perplexity AI --- Search Interface Gold Standard}
+\begin{itemize}[nosep]
+    \item \textbf{URL:} \url{https://perplexity.ai}
+    \item Single accent color (cyan \texttt{\#20b8cd}), narrow content width (\texttt{max-w-[42rem]})
+    \item Pipeline transparency: ``Considering 8 sources\ldots Researched and summarized''
+    \item FK Grotesk font, clean focus rings, predicted follow-up questions
+    \item \textbf{Apply to LabLens:} Constrain search input width, show specific data in loading steps (e.g., ``Analyzing 847 papers from Prof.\ Smith\ldots''), reduce to one accent color
+\end{itemize}
+
+\subsection{2. Consensus.app --- Academic Search Results Cards}
+\begin{itemize}[nosep]
+    \item \textbf{URL:} \url{https://consensus.app}
+    \item Paper title at TOP of each card, AI-extracted answer below in grey box
+    \item ``Study Snapshot'' shows key data points at a glance
+    \item ``Consensus Meter'' visualization for topic agreement
+    \item \textbf{Apply to LabLens:} Lead ProfessorCard with name (not score circle), add ``Research Snapshot'' section, replace alignment bar with compact badge
+\end{itemize}
+
+\subsection{3. Elicit --- Structured Research Data UI}
+\begin{itemize}[nosep]
+    \item \textbf{URL:} \url{https://elicit.com}
+    \item Card-based interface with structured table columns (Findings, Methods, Limitations)
+    \item Click any data point to reveal exact source quote --- builds trust
+    \item ``Add Column'' for custom AI-extracted questions across all results
+    \item \textbf{Apply to LabLens:} Add table/list view toggle, ``Why this match?'' expandable section linking alignment scores to specific papers
+\end{itemize}
+
+\subsection{4. Linear App --- Dark Mode Developer Tool Standard}
+\begin{itemize}[nosep]
+    \item \textbf{URL:} \url{https://linear.app}
+    \item \textbf{Analysis:} \url{https://frontend.horse/articles/the-linear-look/}
+    \item THE defining aesthetic of 2024--2025 dark-mode tools
+    \item Near-black surfaces (\texttt{\#111}--\texttt{\#1a1a1a}), super thin 1px borders at 6\% opacity
+    \item Colorful blurry glows as decoration, bento box grid layouts
+    \item Sans-serif typography is ``an absolute law''
+    \item \textbf{Apply to LabLens:} Make dot grid static, add blurred color orbs (\texttt{filter: blur(100px)}), remove box-shadow glows, use border-color hover transitions
+\end{itemize}
+
+\subsection{5. shadcn/ui --- Component Foundation}
+\begin{itemize}[nosep]
+    \item \textbf{URL:} \url{https://ui.shadcn.com} (112k+ GitHub stars)
+    \item The de facto standard for Next.js + Tailwind in 2025--2026
+    \item Cmd+K Command palette for global search, built on Radix UI (accessible)
+    \item Key components: Command, Card, Badge, Dialog, Tabs, Avatar, Skeleton, Sheet
+    \item \textbf{Apply to LabLens:} Install shadcn/ui, use Command component for search bar, Sheet for slide-in professor details, Skeleton for loading
+\end{itemize}
+
+\subsection{6. Aceternity UI --- Animation Layer}
+\begin{itemize}[nosep]
+    \item \textbf{URL:} \url{https://ui.aceternity.com}
+    \item 200+ animated components, dark-mode-first, Framer Motion + Tailwind
+    \item Key effects: Aurora Background, Lamp Effect, Text Generate Effect, 3D Card Effect
+    \item Copy-paste integration --- each component is self-contained
+    \item \textbf{Apply to LabLens:} Aurora/Lamp Background on homepage hero, Text Generate Effect for tagline, 3D Card hover on ProfessorCards
+\end{itemize}
+
+\subsection{7. Magic UI --- Marketing Polish}
+\begin{itemize}[nosep]
+    \item \textbf{URL:} \url{https://magicui.design}
+    \item Built on shadcn/ui, composable together
+    \item Key components: Bento Grid, Magic Card (cursor spotlight), Animated Gradient Text, Retro Grid
+    \item Uses Geist + Geist Mono fonts (Vercel's typefaces)
+    \item \textbf{Apply to LabLens:} Replace dot grid with Retro Grid, use Magic Card for professor cards, Bento Grid layout with featured \#1 professor in double-wide card
+\end{itemize}
+
+\subsection{8. Vercel Dashboard Template --- Production Reference}
+\begin{itemize}[nosep]
+    \item \textbf{URL:} \url{https://vercel.com/templates/next.js/next-js-and-shadcn-ui-admin-dashboard}
+    \item Official Vercel template --- what Next.js apps ``should'' look like
+    \item Sticky sidebar, Command palette search, card-based metrics, responsive
+    \item \textbf{Apply to LabLens:} Add metric cards at top of results (``12 professors found $\cdot$ 847 papers analyzed $\cdot$ 78\% avg alignment'')
+\end{itemize}
+
+\subsection{9. v0.dev by Vercel --- Instant UI Generation}
+\begin{itemize}[nosep]
+    \item \textbf{URL:} \url{https://v0.dev}
+    \item Describe any UI in natural language $\rightarrow$ production React + Tailwind + shadcn code
+    \item Free tier: 200 monthly generations
+    \item \textbf{Apply to LabLens:} Generate alternate professor card designs, hero sections, results layouts instantly
+\end{itemize}
+
+\subsection{10. Semantic Scholar --- Academic Tool Reference}
+\begin{itemize}[nosep]
+    \item \textbf{URL:} \url{https://semanticscholar.org}
+    \item AI-generated TLDRs on every paper card, citation graph visualization
+    \item ``Skimming Highlights'' labels: Goal, Method, Result with colored overlays
+    \item \textbf{Apply to LabLens:} Add one-line TLDR per professor card, Goal/Method/Result labeling pattern for profile sections
+\end{itemize}
+
+\subsection{11. TailAdmin Next.js --- Free Dashboard Template}
+\begin{itemize}[nosep]
+    \item \textbf{URL:} \url{https://github.com/TailAdmin/free-nextjs-admin-dashboard}
+    \item Free, MIT-licensed, 7 dashboard variants, 500+ components
+    \item Next.js App Router + TypeScript, full dark mode
+    \item \textbf{Apply to LabLens:} Fork and restyle if rebuilding --- has every page type needed
+\end{itemize}
+
+\subsection{12. Linear Look Theme --- Exact Color Specification}
+\begin{itemize}[nosep]
+    \item \textbf{URL:} \url{https://github.com/Arroz-11/ComfyUI-Linear-Theme}
+    \item Codified the exact Linear/Vercel/Raycast aesthetic into a reusable theme
+    \item Formula: dark background + single indigo accent + thin borders + no box shadows
+    \item \textbf{Apply to LabLens:} Consider shifting from amber to indigo (\texttt{\#6366F1}) --- amber reads as ``warning,'' indigo reads as ``intelligent, trustworthy, academic''
+\end{itemize}
+
+\section{Consolidated Improvement Prompt}
+
+The following prompt can be used with v0.dev, Claude, or Cursor to generate an improved UI:
+
+\begin{quote}
+\itshape
+Redesign the LabLens AI research matching tool using these principles:
+
+\textbf{Typography:} Replace Playfair Display with Inter or Geist Sans. Use Geist Mono for data/scores only. All headings sans-serif.
+
+\textbf{Colors:} Dark background \texttt{\#09090B} (zinc-950), surfaces \texttt{\#18181B} (zinc-900), ONE primary accent (indigo \texttt{\#6366F1} or amber \texttt{\#F59E0B}), ONE secondary accent (cyan \texttt{\#22D3EE}). Remove coral and purple from active use.
+
+\textbf{Hero page:} Aceternity-style Aurora Background or Lamp Effect behind the title. Text Generate Effect on the tagline ``Find your research home.'' Remove dot-grid animation. Add 2--3 blurred gradient orbs (\texttt{filter: blur(100px)}, 10\% opacity). Replace emoji badges with small colored dots + text.
+
+\textbf{Search:} shadcn/ui Command component (Cmd+K). Constrain to \texttt{max-w-2xl}. Single glass card, clean focus ring.
+
+\textbf{Results page:} Summary metrics bar at top (``12 professors found $\mid$ 847 papers analyzed $\mid$ Avg.\ alignment: 78\%''). Bento Grid layout --- \#1 professor gets double-wide card. Each card: Name first (large), department, match score as small badge top-right, one-line TLDR, compact stats row. Magic UI cursor-spotlight hover effect.
+
+\textbf{Professor detail:} Slide-in Sheet panel instead of full page navigation. Keep 6 tabs using shadcn Tabs. Show ``Why this match?'' with specific paper citations.
+
+\textbf{Loading:} Specific data in pipeline steps (``Analyzing 12 papers from Prof.\ Smith\ldots''). Use shadcn Skeleton components.
+
+\textbf{Borders:} \texttt{rgba(255,255,255,0.06)}, 1px only. No box-shadow glows --- use border-color changes on hover. Rounded corners: 12px cards, 8px buttons, 6px badges.
+
+\textbf{Animations:} Framer Motion staggered entrance (200--400ms). Layout animations on sort/filter. No pulsing backgrounds.
+\end{quote}
+
+\section{Recommended Palette \& Font Replacement}
+
+\begin{longtable}{>{\ttfamily}l >{\ttfamily}l l}
+\toprule
+\textbf{Current} & \textbf{Suggested} & \textbf{Role} \\
+\midrule
+\#0B0E1A & \#09090B & Background (zinc-950) \\
+\#111827 & \#18181B & Surface (zinc-900) \\
+\#1A2035 & \#27272A & Tertiary (zinc-800) \\
+\#F59E0B & \#6366F1 & Primary accent (indigo-500) \\
+\#14B8A6 & \#22D3EE & Secondary accent (cyan-400) \\
+\#8B5CF6 & --- & Remove or use very sparingly \\
+\#F87171 & --- & Remove \\
+\bottomrule
+\end{longtable}
+
+\begin{longtable}{l l l}
+\toprule
+\textbf{Current Font} & \textbf{Suggested Font} & \textbf{Role} \\
+\midrule
+Playfair Display (serif) & Inter or Geist Sans & Display headings \\
+DM Sans & Keep or switch to Inter & Body text \\
+JetBrains Mono & Geist Mono & Data \& scores only \\
+\bottomrule
+\end{longtable}
+
+\section{Priority Action Plan}
+
+\subsection{Tonight (Biggest Visual Impact, Least Code)}
+\begin{enumerate}[nosep]
+    \item Replace Playfair Display with Inter/Geist Sans (one config change)
+    \item Kill dot-grid animation (remove \texttt{animation} property)
+    \item Add blurred gradient orbs to hero (2--3 absolutely positioned divs)
+    \item Drop to 2 accent colors (amber primary, teal secondary)
+    \item Replace emoji badges with colored dots + text
+\end{enumerate}
+
+\subsection{Tomorrow (Moderate Effort, High Impact)}
+\begin{enumerate}[nosep, start=6]
+    \item Install shadcn/ui, replace search with Command component (Cmd+K)
+    \item Add Aceternity Aurora Background or Lamp Effect to homepage
+    \item Restructure ProfessorCard: name first, score as small badge, one-line TLDR
+    \item Add summary metrics bar at top of results page
+    \item Use v0.dev to generate 2--3 alternate card designs
+\end{enumerate}
+
+\subsection{If Time Permits}
+\begin{enumerate}[nosep, start=11]
+    \item Add shadcn Sheet for slide-in professor details (faster demo flow)
+    \item Add Framer Motion \texttt{layout} animations on sort/filter
+    \item Implement Bento Grid with double-wide card for top professor
+\end{enumerate}
+
+\vfill
+\begin{center}
+    \small\itshape
+    Generated for Columbia Claude Hackathon 2026 --- LabLens Team
+\end{center}
+
+\end{document}

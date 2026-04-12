@@ -38,23 +38,30 @@ async def search_professors(university: str, domain: str, keywords: list[str]) -
     """
     Multi-query search to find professors at a university in a specific research domain.
     Returns structured list of professor candidates.
+    OPTIMIZED: both queries run in parallel.
     """
-    # Build targeted queries
+    import asyncio
+
     kw_str = " ".join(keywords[:4])
     queries = [
         f"{university} {domain} professor research lab 2024 2025",
         f"{university} computer science faculty {kw_str} recent papers publications",
     ]
-    
+
+    results = await asyncio.gather(
+        *[linkup_search(q, depth="deep", output_type="sourcedAnswer") for q in queries],
+        return_exceptions=True,
+    )
+
     all_content = []
-    for query in queries:
-        result = await linkup_search(query, depth="deep", output_type="sourcedAnswer")
+    for result in results:
+        if isinstance(result, Exception):
+            continue
         content = result.get("answer", result.get("content", ""))
         if content:
             all_content.append(content)
-    
-    combined = "\n\n".join(all_content)
-    return combined
+
+    return "\n\n".join(all_content)
 
 
 async def get_professor_deep_profile(professor_name: str, university: str) -> str:

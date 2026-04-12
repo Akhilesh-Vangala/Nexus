@@ -6,7 +6,7 @@ export default function SiteFooter() {
             <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
             <div className="mx-auto flex max-w-7xl flex-col flex-wrap items-center justify-center gap-6 px-4 text-center sm:flex-row sm:justify-between sm:px-6 sm:text-left">
                 <div>
-                    <p className="font-display text-lg text-text-primary/90">LabLens</p>
+                    <p className="font-display text-lg text-text-primary/90">Nexus</p>
                     <p className="mt-2 max-w-md font-body text-xs leading-relaxed text-text-tertiary">
                         Live faculty intelligence — Linkup retrieval, verified signals, dense embeddings, grounded
                         synthesis.

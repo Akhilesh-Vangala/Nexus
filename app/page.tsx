@@ -4,12 +4,13 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import SearchInput from '@/components/SearchInput';
 import SiteFooter from '@/components/SiteFooter';
-import { demoSearchParams } from '@/lib/fixtures/lablens-demo';
-import { clearUiDemo, setUiDemo } from '@/lib/ui-demo';
+import { clearUiDemo } from '@/lib/ui-demo';
+import { useTheme } from '@/lib/theme';
 import { motion } from 'framer-motion';
 
 export default function Home() {
     const router = useRouter();
+    const { theme, toggle } = useTheme();
 
     return (
         <>
@@ -30,26 +31,14 @@ export default function Home() {
                 <nav className="absolute left-0 right-0 top-0 z-20 flex justify-center px-4 pt-6 sm:px-8">
                     <div className="flex w-full max-w-4xl items-center justify-between rounded-full border border-white/[0.08] bg-bg-primary/50 px-4 py-2.5 shadow-elevated backdrop-blur-xl supports-[backdrop-filter]:bg-bg-primary/35 sm:px-6">
                         <span className="font-display text-xl font-semibold tracking-wide text-text-primary">
-                            LabLens
+                            Nexus
                         </span>
-                        <div className="flex max-w-[min(100%,22rem)] flex-wrap items-center justify-end gap-1 sm:max-w-none sm:gap-2">
+                        <div className="flex items-center gap-1 sm:gap-2">
                             <Link
                                 href="/methodology"
                                 className="rounded-full px-3 py-1.5 font-mono text-[10px] uppercase tracking-wider text-text-tertiary transition-colors hover:bg-white/[0.06] hover:text-accent-amber sm:text-[11px]"
                             >
                                 How it works
-                            </Link>
-                            <Link
-                                href="/compare"
-                                className="rounded-full px-3 py-1.5 font-mono text-[10px] uppercase tracking-wider text-text-tertiary transition-colors hover:bg-white/[0.06] hover:text-accent-teal sm:text-[11px]"
-                            >
-                                Compare
-                            </Link>
-                            <Link
-                                href="/phd-fit"
-                                className="rounded-full px-3 py-1.5 font-mono text-[10px] uppercase tracking-wider text-text-tertiary transition-colors hover:bg-white/[0.06] hover:text-text-secondary sm:text-[11px]"
-                            >
-                                PhD fit
                             </Link>
                             <Link
                                 href="/shortlist"
@@ -63,6 +52,22 @@ export default function Home() {
                             >
                                 Portal
                             </Link>
+                            <button
+                                type="button"
+                                onClick={toggle}
+                                aria-label="Toggle light/dark mode"
+                                className="ml-1 rounded-full border border-white/[0.08] bg-white/[0.04] p-2 text-text-tertiary transition-all hover:border-accent-amber/30 hover:bg-white/[0.08] hover:text-accent-amber"
+                            >
+                                {theme === 'dark' ? (
+                                    <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                                    </svg>
+                                ) : (
+                                    <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                                    </svg>
+                                )}
+                            </button>
                         </div>
                     </div>
                 </nav>
@@ -84,7 +89,7 @@ export default function Home() {
                         transition={{ duration: 0.85, delay: 0.05, ease: [0.22, 1, 0.36, 1] }}
                         className="font-display text-6xl font-semibold leading-[0.95] tracking-tight sm:text-7xl md:text-8xl md:leading-[0.92]"
                     >
-                        <span className="text-gradient-gold">LabLens</span>
+                        <span className="text-gradient-gold">Nexus</span>
                     </motion.h1>
 
                     <motion.div
@@ -118,9 +123,9 @@ export default function Home() {
                         transition={{ duration: 0.7, delay: 0.4 }}
                         className="mt-10 flex flex-wrap justify-center gap-2 sm:gap-3"
                     >
-                        <Badge icon="⚡" text="Linkup" color="teal" />
-                        <Badge icon="📐" text="Embeddings" color="purple" />
-                        <Badge icon="✦" text="Claude" color="amber" />
+                        <Badge text="Linkup" color="teal" />
+                        <Badge text="Embeddings" color="purple" />
+                        <Badge text="Claude" color="amber" />
                     </motion.div>
 
                     <motion.div
@@ -135,11 +140,6 @@ export default function Home() {
                                 sessionStorage.setItem('searchParams', JSON.stringify(payload));
                                 router.push('/results');
                             }}
-                            onDemoPreview={() => {
-                                setUiDemo();
-                                sessionStorage.setItem('searchParams', JSON.stringify(demoSearchParams));
-                                router.push('/results');
-                            }}
                         />
                     </motion.div>
                 </div>
@@ -150,7 +150,7 @@ export default function Home() {
     );
 }
 
-function Badge({ icon, text, color }: { icon: string; text: string; color: string }) {
+function Badge({ text, color }: { text: string; color: string }) {
     const colorClasses: Record<string, string> = {
         amber:
             'border-accent-amber/30 bg-gradient-to-br from-accent-amber/[0.12] to-transparent text-accent-amber shadow-[0_0_24px_-4px_rgba(232,163,23,0.25)]',
@@ -163,11 +163,8 @@ function Badge({ icon, text, color }: { icon: string; text: string; color: strin
 
     return (
         <span
-            className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 font-mono text-[11px] uppercase tracking-wider sm:text-xs ${colorClasses[color] || colorClasses.default}`}
+            className={`inline-flex items-center rounded-full border px-4 py-2 font-mono text-[11px] uppercase tracking-wider sm:text-xs ${colorClasses[color] || colorClasses.default}`}
         >
-            <span aria-hidden className="text-sm opacity-90">
-                {icon}
-            </span>
             {text}
         </span>
     );

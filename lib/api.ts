@@ -1,13 +1,12 @@
 /**
  * API base URL for browser and server.
- * In dev, Next.js rewrites `/api/*` → FastAPI (see next.config.mjs).
+ * In dev, we call FastAPI directly to avoid Next.js proxy timeout on long requests.
  * Set NEXT_PUBLIC_API_URL to override (e.g. deployed API).
  */
 export function getApiBaseUrl(): string {
     const env = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, '');
     if (env) return env;
-    if (typeof window !== 'undefined') return '';
-    return 'http://127.0.0.1:8000';
+    return 'http://localhost:8000';
 }
 
 export function apiUrl(path: string): string {

@@ -14,6 +14,7 @@ from starlette.requests import Request
 from routes.search import router as search_router
 from routes.professor import router as professor_router
 from routes.tracker import router as tracker_router
+from routes.resume import router as resume_router
 
 app = FastAPI(
     title="LabLens API",
@@ -47,6 +48,7 @@ app.add_middleware(PrivacyMiddleware)
 app.include_router(search_router, prefix="/api")
 app.include_router(professor_router, prefix="/api")
 app.include_router(tracker_router, prefix="/api")
+app.include_router(resume_router, prefix="/api")
 
 
 @app.get("/")

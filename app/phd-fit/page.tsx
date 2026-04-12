@@ -4,7 +4,7 @@ import SiteHeader from '@/components/SiteHeader';
 import PageBackdrop from '@/components/PageBackdrop';
 
 export const metadata = {
-    title: 'PhD program fit — LabLens',
+    title: 'PhD program fit — Nexus',
     description: 'UI preview: how your research story maps to PhD tracks (coming with full pipeline).',
 };
 

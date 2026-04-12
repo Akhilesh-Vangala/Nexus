@@ -19,11 +19,11 @@ import { demoSearchParams, demoSearchResponse } from '@/lib/fixtures/lablens-dem
 import { UI_DEMO_KEY } from '@/lib/ui-demo';
 
 const PIPELINE_STEPS = [
-    { label: 'Extracting your research intent…', icon: '🧠' },
-    { label: 'Live faculty search (Linkup)…', icon: '🔗' },
-    { label: 'Verifying activity signals…', icon: '✓' },
-    { label: 'Computing semantic alignment…', icon: '📐' },
-    { label: 'Synthesizing cards & drafts…', icon: '💡' },
+    { label: 'Extracting your research intent…', icon: 'I' },
+    { label: 'Live faculty search (Linkup)…', icon: 'II' },
+    { label: 'Verifying activity signals…', icon: 'III' },
+    { label: 'Computing semantic alignment…', icon: 'IV' },
+    { label: 'Synthesizing cards & drafts…', icon: 'V' },
 ];
 
 function snippet(text: string, max = 200) {
@@ -174,7 +174,7 @@ export default function ResultsPage() {
                             Running your search
                         </h2>
                         <p className="mb-10 text-center font-mono text-xs text-text-tertiary">
-                            First run may load the embedding model — thanks for waiting.
+                            Analyzing faculty profiles and computing alignment.
                         </p>
                         <div className="space-y-2">
                             {PIPELINE_STEPS.map((step, i) => (
@@ -193,7 +193,7 @@ export default function ResultsPage() {
                                               : 'border-transparent'
                                     }`}
                                 >
-                                    <span className="text-lg" aria-hidden>
+                                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-white/[0.1] font-mono text-[10px] text-text-tertiary" aria-hidden>
                                         {step.icon}
                                     </span>
                                     <span

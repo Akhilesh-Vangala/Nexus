@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-    title: 'LabLens — Find Your Research Home',
+    title: 'Nexus — Find Your Research Home',
     description: 'AI-powered research alignment engine. Semantic matching to professors whose active, funded research aligns with your intellectual interests.',
     keywords: ['research', 'professor matching', 'academic', 'ML', 'Columbia', 'NYU'],
 }
@@ -13,7 +13,7 @@ export default function RootLayout({
     children: React.ReactNode
 }) {
     return (
-        <html lang="en" className="scroll-smooth">
+        <html lang="en" className="dark scroll-smooth">
             <body className="relative min-h-screen bg-bg-primary font-body text-text-primary antialiased [color-scheme:dark] selection:bg-accent-amber/25 selection:text-text-primary">
                 <a
                     href="#main-content"

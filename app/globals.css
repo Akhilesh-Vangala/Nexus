@@ -23,6 +23,26 @@
   --glow-teal-soft: rgba(45, 212, 191, 0.1);
 }
 
+html.light {
+  --bg-primary: #f8f8f6;
+  --bg-secondary: #eeeee9;
+  --bg-tertiary: #e2e2db;
+  --bg-elevated: #ffffff;
+  --accent-amber: #c78c00;
+  --accent-amber-bright: #b07800;
+  --accent-teal: #0d9488;
+  --accent-coral: #dc2626;
+  --accent-purple: #7c3aed;
+  --text-primary: #1a1a1a;
+  --text-secondary: #525252;
+  --text-tertiary: #8a8a8a;
+  --border: rgba(0, 0, 0, 0.08);
+  --border-hover: rgba(0, 0, 0, 0.16);
+  --glow-amber-soft: rgba(199, 140, 0, 0.08);
+  --glow-teal-soft: rgba(13, 148, 136, 0.07);
+  color-scheme: light;
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
@@ -41,6 +61,7 @@ body {
   font-family: 'DM Sans', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 /* ─── Atmospheric backgrounds ─── */
@@ -319,6 +340,95 @@ select:focus-visible,
 input:focus-visible {
   outline: 2px solid rgba(232, 163, 23, 0.55);
   outline-offset: 3px;
+}
+
+/* ─── Light mode overrides ─── */
+html.light .dot-grid,
+html.light .dot-grid-animated {
+  background-image: radial-gradient(circle, rgba(0, 0, 0, 0.06) 1px, transparent 1px);
+}
+
+html.light .noise-overlay {
+  opacity: 0.04;
+}
+
+html.light .glass-card {
+  background: linear-gradient(
+    165deg,
+    rgba(255, 255, 255, 0.85) 0%,
+    rgba(248, 248, 246, 0.9) 45%,
+    rgba(238, 238, 233, 0.85) 100%
+  );
+  border-color: rgba(0, 0, 0, 0.08);
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.06),
+    0 8px 24px -8px rgba(0, 0, 0, 0.08);
+}
+
+html.light .glass-card:hover {
+  border-color: rgba(0, 0, 0, 0.14);
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.06),
+    0 0 32px -8px var(--glow-amber-soft),
+    0 16px 48px -16px rgba(0, 0, 0, 0.1);
+}
+
+html.light .gradient-frame {
+  background: linear-gradient(
+    135deg,
+    rgba(199, 140, 0, 0.3) 0%,
+    rgba(124, 58, 237, 0.12) 35%,
+    rgba(13, 148, 136, 0.2) 100%
+  );
+  box-shadow: 0 0 40px -15px rgba(199, 140, 0, 0.1);
+}
+
+html.light .gradient-frame-inner {
+  background: rgba(248, 248, 246, 0.96);
+}
+
+html.light .text-gradient-gold {
+  background: linear-gradient(135deg, #92400e 0%, #c78c00 38%, #b07800 55%, #0d9488 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+html.light ::-webkit-scrollbar-track {
+  background: var(--bg-primary);
+}
+
+html.light ::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(199, 140, 0, 0.2), rgba(13, 148, 136, 0.15));
+  border-color: var(--bg-primary);
+}
+
+html.light ::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, rgba(199, 140, 0, 0.4), rgba(13, 148, 136, 0.3));
+}
+
+html.light .tab-active {
+  color: var(--accent-amber);
+  border-bottom-color: var(--accent-amber);
+}
+
+html.light .skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--bg-secondary) 20%,
+    var(--bg-tertiary) 50%,
+    var(--bg-secondary) 80%
+  );
+  background-size: 200% 100%;
+}
+
+html.light button:focus-visible,
+html.light a:focus-visible,
+html.light [role='button']:focus-visible,
+html.light textarea:focus-visible,
+html.light select:focus-visible,
+html.light input:focus-visible {
+  outline-color: rgba(199, 140, 0, 0.55);
 }
 
 @media (prefers-reduced-motion: reduce) {
