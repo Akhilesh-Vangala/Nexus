@@ -8,7 +8,7 @@ import os
 from anthropic import AsyncAnthropic
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv(override=True)
 
 claude_client = AsyncAnthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 MODEL = "claude-sonnet-4-20250514"

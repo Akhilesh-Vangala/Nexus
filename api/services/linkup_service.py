@@ -9,7 +9,7 @@ import re
 import json
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv(override=True)
 
 LINKUP_API_KEY = os.getenv("LINKUP_API_KEY", "")
 LINKUP_BASE = "https://api.linkup.so/v1"
