@@ -2,7 +2,9 @@
 
 LabLens hackathon project workspace.
 
-## What LabLens does (six steps)
+## Idea
+
+LabLens — how it works in plain language:
 
 1. **Student describes their interests** — in plain language, and picks a university (and level: undergrad, master’s, PhD applicant, etc.).
 2. **Turn that into a structured search profile** — topics, keywords, and a short summary we can compare against real research text.
