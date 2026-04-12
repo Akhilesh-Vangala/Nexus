@@ -1,8 +1,10 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import AlignmentBar from './AlignmentBar';
 import TimingBadge from './TimingBadge';
 import type { Professor } from '@/lib/types';
+import { isInShortlist, toggleShortlist } from '@/lib/shortlist';
 
 interface ProfessorCardProps {
     professor: Professor;
@@ -19,6 +21,11 @@ export default function ProfessorCard({ professor, rank, onClick }: ProfessorCar
     const detail = professor.alignment_detail;
     const confidence = detail?.confidence || professor.confidence;
 
+    const [starred, setStarred] = useState(false);
+    useEffect(() => {
+        setStarred(isInShortlist(professor.id));
+    }, [professor.id]);
+
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
@@ -26,22 +33,59 @@ export default function ProfessorCard({ professor, rank, onClick }: ProfessorCar
         }
     };
 
+    const handleStar = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        const next = toggleShortlist(professor);
+        setStarred(next);
+    };
+
+    const institutions = professor.institutions?.length
+        ? professor.institutions
+        : [
+              professor.university?.includes('Columbia')
+                  ? 'Columbia'
+                  : professor.university?.includes('NYU')
+                    ? 'NYU'
+                    : 'School',
+          ];
+
     return (
         <article
             role="button"
             tabIndex={0}
             onClick={onClick}
             onKeyDown={handleKeyDown}
-            aria-label={`View profile for ${professor.name}, alignment score ${Math.round(score)}`}
+            aria-label={`Open profile for ${professor.name}`}
             className={`group relative cursor-pointer rounded-2xl p-6 glass-card transition-transform duration-300 hover:-translate-y-0.5 ${glowClass}`}
         >
             <div className="absolute left-0 top-6 h-[calc(100%-3rem)] w-1 rounded-r-full bg-gradient-to-b from-accent-amber/80 via-accent-teal/40 to-transparent opacity-60" />
+
+            <button
+                type="button"
+                onClick={handleStar}
+                className="absolute right-3 top-12 z-10 rounded-lg p-2 text-lg text-text-tertiary transition-colors hover:bg-white/5 hover:text-accent-amber"
+                title={starred ? 'Remove from shortlist' : 'Save to shortlist'}
+                aria-label={starred ? 'Remove from shortlist' : 'Save to shortlist'}
+            >
+                {starred ? '★' : '☆'}
+            </button>
 
             <div className="absolute right-4 top-4 flex flex-col items-end gap-1">
                 <span className="font-mono text-[10px] uppercase tracking-widest text-text-tertiary">Rank</span>
                 <span className="font-display text-2xl font-bold text-white/20 transition-colors group-hover:text-accent-amber/40">
                     {rank}
                 </span>
+            </div>
+
+            <div className="mb-3 flex flex-wrap gap-1.5">
+                {institutions.map((inst) => (
+                    <span
+                        key={inst}
+                        className="rounded-md border border-accent-teal/25 bg-accent-teal/10 px-2 py-0.5 font-mono text-[10px] text-accent-teal"
+                    >
+                        {inst}
+                    </span>
+                ))}
             </div>
 
             <div className="mb-4 flex items-start justify-between gap-4 pr-14">
@@ -71,8 +115,8 @@ export default function ProfessorCard({ professor, rank, onClick }: ProfessorCar
                         {professor.has_private_signal && (
                             <span
                                 className="mt-1 inline-block text-accent-purple"
-                                title="Additional private alignment signal may be included in this score"
-                                aria-label="Private signal"
+                                title="Private alignment signal may be included"
+                                aria-label="Private tier signal"
                             >
                                 🔒 Private tier
                             </span>
@@ -98,7 +142,15 @@ export default function ProfessorCard({ professor, rank, onClick }: ProfessorCar
 
             <AlignmentBar score={score} />
 
-            <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[11px] text-text-tertiary">
+            <div className="mt-3 flex flex-wrap gap-2 font-mono text-[10px] text-text-tertiary">
+                <span className="rounded border border-white/[0.06] px-1.5 py-0.5">Linkup</span>
+                <span className="rounded border border-white/[0.06] px-1.5 py-0.5">Embeddings</span>
+                {professor.grants && professor.grants.length > 0 && (
+                    <span className="rounded border border-accent-amber/20 px-1.5 py-0.5 text-accent-amber/90">NSF</span>
+                )}
+            </div>
+
+            <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[11px] text-text-tertiary">
                 {professor.seed_ideas && professor.seed_ideas.length > 0 && (
                     <span>{professor.seed_ideas.length} seed ideas</span>
                 )}

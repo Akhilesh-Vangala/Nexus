@@ -7,20 +7,48 @@ import ProfessorCard from '@/components/ProfessorCard';
 import SiteHeader from '@/components/SiteHeader';
 import SiteFooter from '@/components/SiteFooter';
 import { apiUrl } from '@/lib/api';
-import type { Professor, SearchResponse, IntentPayload } from '@/lib/types';
+import { mergeSearchResponses, annotateSchoolTags } from '@/lib/mergeSearch';
+import {
+    normalizeClientSearchParams,
+    saveLastSearchResults,
+    type ClientSearchParams,
+} from '@/lib/searchSession';
+import type { Professor, SearchResponse } from '@/lib/types';
 
 const PIPELINE_STEPS = [
     { label: 'Extracting your research intent…', icon: '🧠' },
-    { label: 'Finding professors via live search…', icon: '🔗' },
+    { label: 'Live faculty search (Linkup)…', icon: '🔗' },
     { label: 'Verifying activity signals…', icon: '✓' },
     { label: 'Computing semantic alignment…', icon: '📐' },
-    { label: 'Generating strategies & drafts…', icon: '💡' },
+    { label: 'Synthesizing cards & drafts…', icon: '💡' },
 ];
 
-function snippet(text: string, max = 180) {
+function snippet(text: string, max = 200) {
     const t = text?.trim() || '';
     if (t.length <= max) return t;
     return `${t.slice(0, max).trim()}…`;
+}
+
+function applyClientFilters(professors: Professor[], p: ClientSearchParams): Professor[] {
+    return professors.filter((prof) => {
+        if (p.min_alignment > 0 && (prof.alignment_score ?? 0) < p.min_alignment) return false;
+        if (p.require_grant && (!prof.grants || prof.grants.length === 0)) return false;
+        if (p.department_filter) {
+            const d = (prof.department || '').toLowerCase();
+            if (!d.includes(p.department_filter.toLowerCase())) return false;
+        }
+        return true;
+    });
+}
+
+async function postSearch(body: Record<string, unknown>) {
+    const response = await fetch(apiUrl('/api/search'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+    });
+    if (!response.ok) throw new Error(`API error: ${response.status}`);
+    return (await response.json()) as SearchResponse;
 }
 
 export default function ResultsPage() {
@@ -29,7 +57,7 @@ export default function ResultsPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [currentStep, setCurrentStep] = useState(0);
     const [error, setError] = useState<string | null>(null);
-    const [searchParams, setSearchParams] = useState<Record<string, string> | null>(null);
+    const [params, setParams] = useState<ClientSearchParams | null>(null);
     const [sortBy, setSortBy] = useState<'score' | 'timing'>('score');
 
     useEffect(() => {
@@ -39,14 +67,24 @@ export default function ResultsPage() {
             return;
         }
 
-        const params = JSON.parse(stored) as Record<string, string>;
-        setSearchParams(params);
+        const raw = JSON.parse(stored) as Record<string, unknown>;
+        const normalized = normalizeClientSearchParams(raw);
+        setParams(normalized);
+        sessionStorage.setItem(
+            'searchContext',
+            JSON.stringify({
+                student_interest: normalized.student_interest,
+                student_background: normalized.student_background,
+                student_level: normalized.student_level,
+                school_scope: normalized.school_scope,
+            })
+        );
 
         const stepTimer = setInterval(() => {
             setCurrentStep((prev) => Math.min(prev + 1, PIPELINE_STEPS.length - 1));
         }, 4500);
 
-        fetchResults(params).finally(() => {
+        runSearch(normalized).finally(() => {
             clearInterval(stepTimer);
             setCurrentStep(PIPELINE_STEPS.length - 1);
         });
@@ -54,18 +92,35 @@ export default function ResultsPage() {
         return () => clearInterval(stepTimer);
     }, [router]);
 
-    const fetchResults = async (params: Record<string, string>) => {
+    const runSearch = async (p: ClientSearchParams) => {
         try {
-            const response = await fetch(apiUrl('/api/search'), {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(params),
-            });
+            const base = {
+                student_interest: p.student_interest,
+                student_level: p.student_level,
+                student_background: p.student_background,
+                top_k: 6,
+            };
 
-            if (!response.ok) throw new Error(`API error: ${response.status}`);
+            let data: SearchResponse;
 
-            const data = (await response.json()) as SearchResponse;
+            if (p.school_scope === 'both') {
+                const [cu, nyu] = await Promise.all([
+                    postSearch({ ...base, university: 'Columbia University' }),
+                    postSearch({ ...base, university: 'NYU' }),
+                ]);
+                data = mergeSearchResponses(cu, nyu, 'Columbia University', 'NYU');
+            } else {
+                const uni =
+                    p.school_scope === 'nyu' ? 'NYU' : 'Columbia University';
+                data = await postSearch({ ...base, university: uni });
+                data = {
+                    ...data,
+                    professors: annotateSchoolTags(data.professors || [], uni),
+                };
+            }
+
             setResults(data);
+            saveLastSearchResults(data.professors || []);
         } catch (err: unknown) {
             setError(err instanceof Error ? err.message : 'Request failed');
         } finally {
@@ -73,16 +128,20 @@ export default function ResultsPage() {
         }
     };
 
-    const professors = results?.professors ?? [];
-    const intent = (results?.intent || null) as IntentPayload | null;
+    const filteredProfessors = useMemo(() => {
+        if (!results?.professors || !params) return [];
+        return applyClientFilters(results.professors, params);
+    }, [results, params]);
 
     const sortedProfessors = useMemo(() => {
-        const list = [...professors] as Professor[];
+        const list = [...filteredProfessors];
         if (sortBy === 'timing') {
             return list.sort((a, b) => (b.timing?.timing_score ?? 0) - (a.timing?.timing_score ?? 0));
         }
         return list.sort((a, b) => (b.alignment_score ?? 0) - (a.alignment_score ?? 0));
-    }, [professors, sortBy]);
+    }, [filteredProfessors, sortBy]);
+
+    const intent = results?.intent;
 
     if (isLoading) {
         return (
@@ -91,12 +150,11 @@ export default function ResultsPage() {
                 <main id="main-content" className="flex flex-1 items-center justify-center px-4 py-12">
                     <div className="w-full max-w-lg">
                         <h2 className="mb-2 text-center font-display text-2xl text-text-primary">
-                            Finding your research home
+                            Running your search
                         </h2>
                         <p className="mb-10 text-center font-mono text-xs text-text-tertiary">
-                            Pipeline running — this can take a minute on first model load.
+                            First run may load the embedding model — thanks for waiting.
                         </p>
-
                         <div className="space-y-2">
                             {PIPELINE_STEPS.map((step, i) => (
                                 <motion.div
@@ -106,13 +164,12 @@ export default function ResultsPage() {
                                         opacity: i <= currentStep ? 1 : 0.35,
                                         x: 0,
                                     }}
-                                    transition={{ delay: i * 0.08, duration: 0.35 }}
-                                    className={`flex items-center gap-3 rounded-xl border p-3 transition-colors ${
+                                    className={`flex items-center gap-3 rounded-xl border p-3 ${
                                         i === currentStep
                                             ? 'border-accent-amber/25 bg-bg-tertiary/80'
                                             : i < currentStep
                                               ? 'border-transparent bg-bg-secondary/40'
-                                              : 'border-transparent bg-transparent'
+                                              : 'border-transparent'
                                     }`}
                                 >
                                     <span className="text-lg" aria-hidden>
@@ -133,7 +190,6 @@ export default function ResultsPage() {
                                 </motion.div>
                             ))}
                         </div>
-
                         <div className="mt-10 grid grid-cols-1 gap-4">
                             {[0, 1, 2].map((i) => (
                                 <div key={i} className="glass-card p-6">
@@ -156,16 +212,16 @@ export default function ResultsPage() {
                 <SiteHeader />
                 <main id="main-content" className="flex flex-1 items-center justify-center px-4">
                     <div className="glass-card max-w-md p-10 text-center">
-                        <h2 className="mb-2 font-display text-xl text-accent-coral">We couldn&apos;t complete the search</h2>
+                        <h2 className="mb-2 font-display text-xl text-accent-coral">Search failed</h2>
                         <p className="mb-2 font-mono text-xs text-text-tertiary">
-                            Is the API running on port 8000? Next.js rewrites <code className="text-text-secondary">/api</code>{' '}
-                            to FastAPI in dev.
+                            Start the API:{' '}
+                            <code className="text-text-secondary">cd api && uvicorn main:app --port 8000</code>
                         </p>
                         <p className="mb-8 font-body text-sm text-text-secondary">{error}</p>
                         <button
                             type="button"
                             onClick={() => router.push('/')}
-                            className="rounded-xl bg-accent-amber/20 px-6 py-2.5 font-mono text-sm text-accent-amber transition-colors hover:bg-accent-amber/30"
+                            className="rounded-xl bg-accent-amber/20 px-6 py-2.5 font-mono text-sm text-accent-amber hover:bg-accent-amber/30"
                         >
                             ← Back to search
                         </button>
@@ -176,15 +232,24 @@ export default function ResultsPage() {
     }
 
     const meta = results?.pipeline_metadata;
+    const schoolLabel =
+        params?.school_scope === 'both'
+            ? 'Columbia & NYU'
+            : params?.school_scope === 'nyu'
+              ? 'NYU'
+              : 'Columbia';
 
     return (
         <div className="flex min-h-screen flex-col bg-bg-primary">
             <SiteHeader
                 subtitle="Results"
                 right={
-                    <span className="hidden text-right font-mono text-[10px] text-text-tertiary sm:block">
-                        <span className="text-accent-teal">{results?.total_verified ?? 0}</span> verified in pipeline ·{' '}
-                        <span className="text-text-secondary">{sortedProfessors.length}</span> ranked
+                    <span className="hidden text-right font-mono text-[10px] text-text-tertiary lg:block">
+                        <span className="text-accent-teal">{results?.total_verified ?? 0}</span> pipeline verified ·{' '}
+                        <span className="text-text-secondary">{sortedProfessors.length}</span> shown
+                        {params && (params.require_grant || params.min_alignment > 0 || params.department_filter) && (
+                            <span className="block text-accent-amber">Filters applied</span>
+                        )}
                     </span>
                 }
             />
@@ -192,19 +257,16 @@ export default function ResultsPage() {
             <main id="main-content" className="flex-1">
                 <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:py-10">
                     <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,2.1fr)]">
-                        {/* Sidebar */}
                         <aside className="space-y-6 lg:sticky lg:top-24 lg:self-start">
                             <div>
                                 <p className="mb-2 font-mono text-[10px] uppercase tracking-wider text-accent-teal">
-                                    Your query
+                                    Your search
                                 </p>
-                                {searchParams?.university && (
-                                    <span className="mb-3 inline-block rounded-full border border-white/10 bg-bg-secondary/80 px-3 py-1 font-mono text-[11px] text-text-secondary">
-                                        {searchParams.university}
-                                    </span>
-                                )}
-                                <blockquote className="border-l-2 border-accent-amber/35 pl-4 font-body text-sm italic leading-relaxed text-text-secondary">
-                                    &ldquo;{snippet(searchParams?.student_interest || '', 220)}&rdquo;
+                                <span className="mb-2 inline-block rounded-full border border-white/10 bg-bg-secondary/80 px-3 py-1 font-mono text-[11px] text-text-secondary">
+                                    {schoolLabel}
+                                </span>
+                                <blockquote className="mt-3 border-l-2 border-accent-amber/35 pl-4 font-body text-sm italic leading-relaxed text-text-secondary">
+                                    &ldquo;{snippet(params?.student_interest || '', 240)}&rdquo;
                                 </blockquote>
                             </div>
 
@@ -236,7 +298,7 @@ export default function ResultsPage() {
                                     </p>
                                     <ul className="space-y-2 font-mono text-[11px] text-text-secondary">
                                         <li className="flex justify-between gap-4">
-                                            <span className="text-text-tertiary">Found</span>
+                                            <span className="text-text-tertiary">Raw found</span>
                                             <span>{meta.professors_found}</span>
                                         </li>
                                         <li className="flex justify-between gap-4">
@@ -244,12 +306,17 @@ export default function ResultsPage() {
                                             <span>{meta.professors_verified}</span>
                                         </li>
                                         <li className="flex justify-between gap-4">
-                                            <span className="text-text-tertiary">Embeddings</span>
+                                            <span className="text-text-tertiary">Scored</span>
                                             <span>{meta.embeddings_computed}</span>
                                         </li>
                                     </ul>
                                 </div>
                             )}
+
+                            <div className="rounded-xl border border-white/[0.06] bg-bg-tertiary/30 p-4 font-mono text-[10px] text-text-tertiary">
+                                <p className="mb-1 text-text-secondary">Data sources</p>
+                                <p>Linkup · arXiv · NSF Awards · local embeddings · Claude</p>
+                            </div>
 
                             <button
                                 type="button"
@@ -260,7 +327,6 @@ export default function ResultsPage() {
                             </button>
                         </aside>
 
-                        {/* Main column */}
                         <div>
                             <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                                 <div>
@@ -268,7 +334,15 @@ export default function ResultsPage() {
                                         Matched professors
                                     </h1>
                                     <p className="mt-1 font-mono text-xs text-text-tertiary">
-                                        Ranked by {sortBy === 'score' ? 'semantic alignment' : 'outreach timing score'}
+                                        Sort: {sortBy === 'score' ? 'alignment score' : 'timing score'} · Star cards to
+                                        save to{' '}
+                                        <button
+                                            type="button"
+                                            onClick={() => router.push('/shortlist')}
+                                            className="text-accent-purple hover:underline"
+                                        >
+                                            shortlist
+                                        </button>
                                     </p>
                                 </div>
                                 <div
@@ -307,14 +381,14 @@ export default function ResultsPage() {
                                         key={prof.id || `${prof.name}-${i}`}
                                         initial={{ opacity: 0, y: 20 }}
                                         animate={{ opacity: 1, y: 0 }}
-                                        transition={{ delay: Math.min(i * 0.08, 0.6), duration: 0.45 }}
+                                        transition={{ delay: Math.min(i * 0.08, 0.55), duration: 0.45 }}
                                     >
                                         <ProfessorCard
                                             professor={prof}
                                             rank={i + 1}
                                             onClick={() => {
                                                 sessionStorage.setItem('selectedProfessor', JSON.stringify(prof));
-                                                sessionStorage.setItem('searchContext', JSON.stringify(searchParams));
+                                                sessionStorage.setItem('searchContext', JSON.stringify(params));
                                                 router.push(`/professor/${prof.id || i}`);
                                             }}
                                         />
@@ -322,17 +396,33 @@ export default function ResultsPage() {
                                 ))}
                             </div>
 
-                            {sortedProfessors.length === 0 && (
-                                <div className="rounded-2xl border border-dashed border-white/10 py-24 text-center">
-                                    <p className="font-display text-lg text-text-secondary">No professors passed the filters</p>
+                            {sortedProfessors.length === 0 && (results?.professors?.length ?? 0) > 0 && (
+                                <div className="rounded-2xl border border-dashed border-accent-amber/30 py-16 text-center">
+                                    <p className="font-display text-lg text-text-secondary">No professors match your filters</p>
                                     <p className="mx-auto mt-2 max-w-md font-body text-sm text-text-tertiary">
-                                        {results?.message ||
-                                            'Try a broader interest description, another university, or check API keys for Linkup and Anthropic.'}
+                                        Go back and loosen department text, uncheck grant-only, or lower the minimum score.
                                     </p>
                                     <button
                                         type="button"
                                         onClick={() => router.push('/')}
-                                        className="mt-8 rounded-xl bg-accent-amber/20 px-6 py-2.5 font-mono text-sm text-accent-amber hover:bg-accent-amber/30"
+                                        className="mt-8 rounded-xl bg-accent-amber/20 px-6 py-2.5 font-mono text-sm text-accent-amber"
+                                    >
+                                        Edit search
+                                    </button>
+                                </div>
+                            )}
+
+                            {sortedProfessors.length === 0 && (results?.professors?.length ?? 0) === 0 && (
+                                <div className="rounded-2xl border border-dashed border-white/10 py-24 text-center">
+                                    <p className="font-display text-lg text-text-secondary">No professors returned</p>
+                                    <p className="mx-auto mt-2 max-w-md font-body text-sm text-text-tertiary">
+                                        {results?.message ||
+                                            'Broaden your prompt or check Linkup / Anthropic keys on the API.'}
+                                    </p>
+                                    <button
+                                        type="button"
+                                        onClick={() => router.push('/')}
+                                        className="mt-8 rounded-xl bg-accent-amber/20 px-6 py-2.5 font-mono text-sm text-accent-amber"
                                     >
                                         Edit search
                                     </button>

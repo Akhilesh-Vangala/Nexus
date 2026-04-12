@@ -111,6 +111,8 @@ export interface Professor {
     id: string;
     name: string;
     university: string;
+    /** Shown when searching Columbia + NYU together */
+    institutions?: string[];
     department: string;
     lab_name?: string;
     lab_url?: string;

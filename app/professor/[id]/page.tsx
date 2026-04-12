@@ -1,13 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import AlignmentBar from '@/components/AlignmentBar';
 import TimingBadge from '@/components/TimingBadge';
 import SiteHeader from '@/components/SiteHeader';
 import SiteFooter from '@/components/SiteFooter';
 import { apiUrl } from '@/lib/api';
+import { loadLastSearchResults } from '@/lib/searchSession';
 
 const TABS = [
     { id: 'research', label: 'Research Intelligence', icon: '🔬' },
@@ -20,6 +21,8 @@ const TABS = [
 
 export default function ProfessorPage() {
     const router = useRouter();
+    const params = useParams();
+    const routeId = params?.id as string | undefined;
     const [professor, setProfessor] = useState<any>(null);
     const [activeTab, setActiveTab] = useState('research');
     const [deepData, setDeepData] = useState<any>(null);
@@ -31,10 +34,12 @@ export default function ProfessorPage() {
         const stored = sessionStorage.getItem('selectedProfessor');
         if (stored) {
             setProfessor(JSON.parse(stored));
+            setDeepData(null);
+            setEmailSent(false);
         } else {
             router.push('/');
         }
-    }, []);
+    }, [routeId, router]);
 
     const fetchDeepDive = async () => {
         if (!professor || deepData) return;
@@ -172,10 +177,50 @@ export default function ProfessorPage() {
                         />
                     )}
                 </motion.div>
+
+                <SimilarFromSearch currentId={professor.id} />
             </main>
 
             <SiteFooter />
         </div>
+    );
+}
+
+function SimilarFromSearch({ currentId }: { currentId: string }) {
+    const router = useRouter();
+    const others = loadLastSearchResults()
+        .filter((p) => p.id !== currentId)
+        .slice(0, 4);
+    if (others.length === 0) return null;
+
+    return (
+        <section className="mt-16 border-t border-white/[0.06] pt-10">
+            <h2 className="mb-2 font-display text-xl text-text-primary">Other matches from this search</h2>
+            <p className="mb-6 font-body text-sm text-text-tertiary">
+                Same run — switch profiles to compare fit before you email.
+            </p>
+            <div className="grid gap-4 md:grid-cols-2">
+                {others.map((p) => (
+                    <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => {
+                            sessionStorage.setItem('selectedProfessor', JSON.stringify(p));
+                            router.push(`/professor/${p.id}`);
+                        }}
+                        className="rounded-xl border border-white/[0.06] bg-bg-secondary/40 p-4 text-left transition-colors hover:border-accent-amber/35 hover:bg-bg-tertiary/40"
+                    >
+                        <p className="font-display text-text-primary">Prof. {p.name}</p>
+                        <p className="mt-1 font-mono text-xs text-accent-teal">
+                            {Math.round(p.alignment_score || 0)} alignment
+                        </p>
+                        {p.current_focus && (
+                            <p className="mt-2 line-clamp-2 font-body text-xs text-text-tertiary">{p.current_focus}</p>
+                        )}
+                    </button>
+                ))}
+            </div>
+        </section>
     );
 }
 
