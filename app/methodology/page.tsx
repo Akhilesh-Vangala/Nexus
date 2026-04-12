@@ -1,5 +1,7 @@
 import Link from 'next/link';
 import SiteFooter from '@/components/SiteFooter';
+import SiteHeader from '@/components/SiteHeader';
+import PageBackdrop from '@/components/PageBackdrop';
 
 export const metadata = {
     title: 'How LabLens works — LabLens',
@@ -9,25 +11,8 @@ export const metadata = {
 export default function MethodologyPage() {
     return (
         <div className="relative flex min-h-screen flex-col overflow-hidden bg-bg-primary">
-            <div className="pointer-events-none fixed inset-0">
-                <div className="absolute left-1/4 top-[15%] h-[360px] w-[360px] -translate-x-1/2 rounded-full bg-accent-amber/[0.05] blur-[100px]" />
-                <div className="absolute bottom-[10%] right-0 h-[320px] w-[320px] rounded-full bg-accent-purple/[0.06] blur-[90px]" />
-            </div>
-
-            <header className="relative z-10 border-b border-white/[0.07] bg-mesh-header backdrop-blur-xl">
-                <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-accent-teal/20 to-transparent" />
-                <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-4 sm:px-6">
-                    <Link href="/" className="font-display text-xl font-semibold text-text-primary hover:text-accent-amber">
-                        LabLens
-                    </Link>
-                    <Link
-                        href="/shortlist"
-                        className="rounded-full border border-white/[0.08] px-4 py-2 font-mono text-[10px] uppercase tracking-wider text-text-tertiary transition-colors hover:border-accent-purple/30 hover:text-accent-purple"
-                    >
-                        Shortlist →
-                    </Link>
-                </div>
-            </header>
+            <PageBackdrop subtle />
+            <SiteHeader subtitle="How it works" />
 
             <main id="main-content" className="relative z-10 mx-auto max-w-3xl flex-1 px-4 py-14 sm:px-6">
                 <h1 className="mb-2 font-display text-4xl font-semibold sm:text-5xl">

@@ -53,7 +53,7 @@ export default function SiteHeader({ showBack, subtitle, right }: SiteHeaderProp
                     )}
                 </div>
 
-                <nav className="ml-1 hidden items-center gap-1 sm:flex">
+                <nav className="ml-1 hidden flex-wrap items-center gap-1 lg:flex">
                     <Link
                         href="/methodology"
                         className="rounded-full px-3 py-2 font-mono text-[10px] uppercase tracking-wider text-text-tertiary transition-all hover:bg-white/[0.05] hover:text-accent-amber"
@@ -61,10 +61,28 @@ export default function SiteHeader({ showBack, subtitle, right }: SiteHeaderProp
                         How it works
                     </Link>
                     <Link
+                        href="/compare"
+                        className="rounded-full px-3 py-2 font-mono text-[10px] uppercase tracking-wider text-text-tertiary transition-all hover:bg-white/[0.05] hover:text-accent-teal"
+                    >
+                        Compare
+                    </Link>
+                    <Link
+                        href="/phd-fit"
+                        className="rounded-full px-3 py-2 font-mono text-[10px] uppercase tracking-wider text-text-tertiary transition-all hover:bg-white/[0.05] hover:text-text-secondary"
+                    >
+                        PhD fit
+                    </Link>
+                    <Link
                         href="/shortlist"
                         className="rounded-full border border-transparent px-3 py-2 font-mono text-[10px] uppercase tracking-wider text-text-tertiary transition-all hover:border-accent-purple/20 hover:bg-accent-purple/5 hover:text-accent-purple"
                     >
                         Shortlist{nShort > 0 ? ` · ${nShort}` : ''}
+                    </Link>
+                    <Link
+                        href="/professor-portal"
+                        className="rounded-full border border-accent-teal/20 bg-accent-teal/5 px-3 py-2 font-mono text-[10px] uppercase tracking-wider text-accent-teal transition-all hover:border-accent-teal/35 hover:bg-accent-teal/10"
+                    >
+                        Portal
                     </Link>
                 </nav>
 

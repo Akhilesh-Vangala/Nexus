@@ -36,10 +36,12 @@ export type SearchFormPayload = {
 
 interface SearchInputProps {
     onSearch: (payload: SearchFormPayload) => void;
+    /** UI-only: jump to results with demo fixtures (no API). */
+    onDemoPreview?: () => void;
     isLoading?: boolean;
 }
 
-export default function SearchInput({ onSearch, isLoading = false }: SearchInputProps) {
+export default function SearchInput({ onSearch, onDemoPreview, isLoading = false }: SearchInputProps) {
     const [query, setQuery] = useState('');
     const [schoolScope, setSchoolScope] = useState<SchoolScope>('columbia');
     const [level, setLevel] = useState('masters');
@@ -265,6 +267,21 @@ export default function SearchInput({ onSearch, isLoading = false }: SearchInput
             <p className="mt-4 text-center font-mono text-[10px] uppercase tracking-wider text-text-tertiary/90">
                 Linkup · arXiv · NSF · embeddings · Claude · ⌘ / Ctrl + Enter
             </p>
+
+            {onDemoPreview && (
+                <div className="mt-6 border-t border-white/[0.06] pt-6">
+                    <button
+                        type="button"
+                        onClick={onDemoPreview}
+                        className="w-full rounded-2xl border border-accent-purple/30 bg-accent-purple/10 py-3 font-mono text-xs uppercase tracking-wider text-accent-purple transition-all hover:border-accent-purple/50 hover:bg-accent-purple/15"
+                    >
+                        Explore interface — demo data (no API)
+                    </button>
+                    <p className="mt-2 text-center font-body text-[11px] text-text-tertiary">
+                        Builds every screen with sample professors so you can polish UI before the pipeline is wired.
+                    </p>
+                </div>
+            )}
         </div>
     );
 }

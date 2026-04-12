@@ -14,7 +14,7 @@ export default function RootLayout({
 }) {
     return (
         <html lang="en" className="scroll-smooth">
-            <body className="relative font-body min-h-screen bg-bg-primary text-text-primary antialiased selection:bg-accent-amber/25 selection:text-text-primary">
+            <body className="relative min-h-screen bg-bg-primary font-body text-text-primary antialiased [color-scheme:dark] selection:bg-accent-amber/25 selection:text-text-primary">
                 <a
                     href="#main-content"
                     className="absolute left-[-9999px] top-4 z-[100] rounded-lg bg-accent-amber px-4 py-2 font-mono text-sm text-stone-950 shadow-lg transition-none focus:left-4 focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-stone-900"

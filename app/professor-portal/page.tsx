@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import SiteHeader from '@/components/SiteHeader';
 import SiteFooter from '@/components/SiteFooter';
+import PageBackdrop from '@/components/PageBackdrop';
 import { apiUrl } from '@/lib/api';
 
 const EPSILON_OPTIONS = [
@@ -49,9 +50,7 @@ export default function ProfessorPortal() {
 
     return (
         <div className="relative flex min-h-screen flex-col overflow-hidden bg-bg-primary dot-grid">
-            <div className="pointer-events-none fixed inset-0">
-                <div className="absolute left-[10%] top-[20%] h-[280px] w-[280px] rounded-full bg-accent-purple/[0.07] blur-[80px]" />
-            </div>
+            <PageBackdrop />
             <SiteHeader subtitle="Professor portal" />
 
             <main id="main-content" className="relative z-10 flex-1">

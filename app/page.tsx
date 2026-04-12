@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import SearchInput from '@/components/SearchInput';
 import SiteFooter from '@/components/SiteFooter';
+import { demoSearchParams } from '@/lib/fixtures/lablens-demo';
+import { clearUiDemo, setUiDemo } from '@/lib/ui-demo';
 import { motion } from 'framer-motion';
 
 export default function Home() {
@@ -30,12 +32,24 @@ export default function Home() {
                         <span className="font-display text-xl font-semibold tracking-wide text-text-primary">
                             LabLens
                         </span>
-                        <div className="flex items-center gap-1 sm:gap-3">
+                        <div className="flex max-w-[min(100%,22rem)] flex-wrap items-center justify-end gap-1 sm:max-w-none sm:gap-2">
                             <Link
                                 href="/methodology"
                                 className="rounded-full px-3 py-1.5 font-mono text-[10px] uppercase tracking-wider text-text-tertiary transition-colors hover:bg-white/[0.06] hover:text-accent-amber sm:text-[11px]"
                             >
                                 How it works
+                            </Link>
+                            <Link
+                                href="/compare"
+                                className="rounded-full px-3 py-1.5 font-mono text-[10px] uppercase tracking-wider text-text-tertiary transition-colors hover:bg-white/[0.06] hover:text-accent-teal sm:text-[11px]"
+                            >
+                                Compare
+                            </Link>
+                            <Link
+                                href="/phd-fit"
+                                className="rounded-full px-3 py-1.5 font-mono text-[10px] uppercase tracking-wider text-text-tertiary transition-colors hover:bg-white/[0.06] hover:text-text-secondary sm:text-[11px]"
+                            >
+                                PhD fit
                             </Link>
                             <Link
                                 href="/shortlist"
@@ -45,9 +59,9 @@ export default function Home() {
                             </Link>
                             <Link
                                 href="/professor-portal"
-                                className="ml-1 rounded-full border border-accent-teal/25 bg-accent-teal/10 px-3 py-1.5 font-mono text-[10px] uppercase tracking-wider text-accent-teal transition-colors hover:border-accent-teal/45 hover:bg-accent-teal/15 sm:text-[11px]"
+                                className="rounded-full border border-accent-teal/25 bg-accent-teal/10 px-3 py-1.5 font-mono text-[10px] uppercase tracking-wider text-accent-teal transition-colors hover:border-accent-teal/45 hover:bg-accent-teal/15 sm:text-[11px]"
                             >
-                                Professors
+                                Portal
                             </Link>
                         </div>
                     </div>
@@ -117,7 +131,13 @@ export default function Home() {
                     >
                         <SearchInput
                             onSearch={(payload) => {
+                                clearUiDemo();
                                 sessionStorage.setItem('searchParams', JSON.stringify(payload));
+                                router.push('/results');
+                            }}
+                            onDemoPreview={() => {
+                                setUiDemo();
+                                sessionStorage.setItem('searchParams', JSON.stringify(demoSearchParams));
                                 router.push('/results');
                             }}
                         />

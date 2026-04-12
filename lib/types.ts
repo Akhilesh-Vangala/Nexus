@@ -131,6 +131,8 @@ export interface Professor {
     lab_culture: LabCulture | null;
     timing: TimingInfo | null;
     skills_gap: SkillsGap | null;
+    /** Raw alumni trail text from deep dive (optional). */
+    alumni_data?: string;
     has_private_signal: boolean;
     three_tier_score?: ThreeTierScore;
     approach_strategy?: {

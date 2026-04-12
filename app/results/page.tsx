@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import ProfessorCard from '@/components/ProfessorCard';
 import SiteHeader from '@/components/SiteHeader';
 import SiteFooter from '@/components/SiteFooter';
+import PageBackdrop from '@/components/PageBackdrop';
 import { apiUrl } from '@/lib/api';
 import { mergeSearchResponses, annotateSchoolTags } from '@/lib/mergeSearch';
 import {
@@ -14,6 +15,8 @@ import {
     type ClientSearchParams,
 } from '@/lib/searchSession';
 import type { Professor, SearchResponse } from '@/lib/types';
+import { demoSearchParams, demoSearchResponse } from '@/lib/fixtures/lablens-demo';
+import { UI_DEMO_KEY } from '@/lib/ui-demo';
 
 const PIPELINE_STEPS = [
     { label: 'Extracting your research intent…', icon: '🧠' },
@@ -59,16 +62,20 @@ export default function ResultsPage() {
     const [error, setError] = useState<string | null>(null);
     const [params, setParams] = useState<ClientSearchParams | null>(null);
     const [sortBy, setSortBy] = useState<'score' | 'timing'>('score');
+    const [isUiDemo, setIsUiDemo] = useState(false);
 
     useEffect(() => {
+        const demo = typeof window !== 'undefined' && sessionStorage.getItem(UI_DEMO_KEY) === '1';
+        setIsUiDemo(demo);
         const stored = sessionStorage.getItem('searchParams');
-        if (!stored) {
+
+        if (!stored && !demo) {
             router.push('/');
             return;
         }
 
-        const raw = JSON.parse(stored) as Record<string, unknown>;
-        const normalized = normalizeClientSearchParams(raw);
+        const raw = (stored ? JSON.parse(stored) : {}) as Record<string, unknown>;
+        const normalized = demo && !stored ? demoSearchParams : normalizeClientSearchParams(raw);
         setParams(normalized);
         sessionStorage.setItem(
             'searchContext',
@@ -82,7 +89,21 @@ export default function ResultsPage() {
 
         const stepTimer = setInterval(() => {
             setCurrentStep((prev) => Math.min(prev + 1, PIPELINE_STEPS.length - 1));
-        }, 4500);
+        }, demo ? 420 : 4500);
+
+        if (demo) {
+            const done = setTimeout(() => {
+                clearInterval(stepTimer);
+                setResults(demoSearchResponse);
+                saveLastSearchResults(demoSearchResponse.professors);
+                setIsLoading(false);
+                setCurrentStep(PIPELINE_STEPS.length - 1);
+            }, 2000);
+            return () => {
+                clearInterval(stepTimer);
+                clearTimeout(done);
+            };
+        }
 
         runSearch(normalized).finally(() => {
             clearInterval(stepTimer);
@@ -241,11 +262,7 @@ export default function ResultsPage() {
 
     return (
         <div className="relative flex min-h-screen flex-col overflow-hidden bg-bg-primary">
-            <div className="pointer-events-none fixed inset-0">
-                <div className="absolute -right-[20%] top-0 h-[420px] w-[420px] rounded-full bg-accent-purple/[0.06] blur-[100px]" />
-                <div className="absolute -left-[15%] bottom-0 h-[380px] w-[380px] rounded-full bg-accent-teal/[0.05] blur-[90px]" />
-                <div className="noise-overlay opacity-[0.12]" aria-hidden />
-            </div>
+            <PageBackdrop />
             <SiteHeader
                 subtitle="Results"
                 right={
@@ -261,6 +278,13 @@ export default function ResultsPage() {
 
             <main id="main-content" className="relative z-10 flex-1">
                 <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:py-10">
+                    {isUiDemo && (
+                        <div className="mb-8 rounded-2xl border border-accent-purple/30 bg-gradient-to-r from-accent-purple/15 to-accent-teal/10 px-5 py-4 font-mono text-xs text-accent-purple">
+                            <span className="text-text-primary">UI demo mode</span> — results are static fixtures. Use
+                            &ldquo;Find professors&rdquo; from the home page to call the real API (demo flag clears
+                            automatically).
+                        </div>
+                    )}
                     <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,2.1fr)]">
                         <aside className="space-y-6 lg:sticky lg:top-24 lg:self-start">
                             <div>

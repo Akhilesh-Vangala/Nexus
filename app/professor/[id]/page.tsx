@@ -7,8 +7,12 @@ import AlignmentBar from '@/components/AlignmentBar';
 import TimingBadge from '@/components/TimingBadge';
 import SiteHeader from '@/components/SiteHeader';
 import SiteFooter from '@/components/SiteFooter';
+import PageBackdrop from '@/components/PageBackdrop';
+import { UiSection as Section } from '@/components/professor/UiSection';
 import { apiUrl } from '@/lib/api';
+import { mergeDemoProfile } from '@/lib/fixtures/lablens-demo';
 import { loadLastSearchResults } from '@/lib/searchSession';
+import { isUiDemoClient } from '@/lib/ui-demo';
 
 const TABS = [
     { id: 'research', label: 'Research Intelligence', icon: '🔬' },
@@ -29,6 +33,11 @@ export default function ProfessorPage() {
     const [isLoadingDeep, setIsLoadingDeep] = useState(false);
     const [copied, setCopied] = useState(false);
     const [emailSent, setEmailSent] = useState(false);
+    const [uiDemo, setUiDemo] = useState(false);
+
+    useEffect(() => {
+        setUiDemo(isUiDemoClient());
+    }, []);
 
     useEffect(() => {
         const stored = sessionStorage.getItem('selectedProfessor');
@@ -87,14 +96,15 @@ export default function ProfessorPage() {
         );
     }
 
-    const data = deepData || professor;
+    const data = deepData || (uiDemo ? mergeDemoProfile(professor) : professor);
     const score = data.alignment_score || 0;
 
     return (
-        <div className="flex min-h-screen flex-col bg-bg-primary">
+        <div className="relative flex min-h-screen flex-col overflow-hidden bg-bg-primary">
+            <PageBackdrop />
             <SiteHeader showBack subtitle="Professor profile" />
 
-            <main id="main-content" className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6">
+            <main id="main-content" className="relative z-10 mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6">
                 {/* Professor header */}
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
                     <div className="flex items-start justify-between flex-wrap gap-4">
@@ -134,27 +144,37 @@ export default function ProfessorPage() {
                         </p>
                     )}
 
-                    {!deepData && (
+                    {!deepData && !uiDemo && (
                         <button
+                            type="button"
                             onClick={fetchDeepDive}
                             disabled={isLoadingDeep}
-                            className="mt-4 px-4 py-2 rounded-lg bg-accent-purple/20 text-accent-purple font-mono text-sm hover:bg-accent-purple/30 transition-colors disabled:opacity-50"
+                            className="mt-4 rounded-xl border border-accent-purple/30 bg-accent-purple/15 px-5 py-2.5 font-mono text-sm text-accent-purple transition-all hover:bg-accent-purple/25 disabled:opacity-50"
                         >
-                            {isLoadingDeep ? '⟳ Loading deep analysis...' : '🔍 Load Full Deep Dive'}
+                            {isLoadingDeep ? '⟳ Loading deep analysis…' : '🔍 Load full deep dive (API)'}
                         </button>
+                    )}
+                    {uiDemo && (
+                        <p className="mt-4 inline-flex items-center gap-2 rounded-xl border border-accent-teal/25 bg-accent-teal/10 px-4 py-2 font-mono text-xs text-accent-teal">
+                            UI demo — tabs show fixture data. Connect the API for live deep dives.
+                        </p>
                     )}
                 </motion.div>
 
                 {/* Tabs */}
-                <div className="flex gap-1 overflow-x-auto border-b border-white/[0.06] mb-8 pb-0">
+                <div className="mb-8 flex gap-2 overflow-x-auto pb-1">
                     {TABS.map((tab) => (
                         <button
                             key={tab.id}
+                            type="button"
                             onClick={() => setActiveTab(tab.id)}
-                            className={`px-4 py-3 text-sm font-body whitespace-nowrap transition-all ${activeTab === tab.id ? 'tab-active' : 'tab-inactive'
-                                }`}
+                            className={`shrink-0 rounded-full border px-4 py-2.5 font-mono text-[10px] uppercase tracking-wider transition-all sm:text-[11px] ${
+                                activeTab === tab.id
+                                    ? 'border-accent-amber/35 bg-gradient-to-r from-accent-amber/20 to-accent-teal/10 text-accent-amber shadow-glow-amber'
+                                    : 'border-white/[0.08] text-text-tertiary hover:border-white/15 hover:bg-white/[0.04] hover:text-text-secondary'
+                            }`}
                         >
-                            <span className="mr-1.5">{tab.icon}</span>
+                            <span className="mr-1.5 opacity-90">{tab.icon}</span>
                             {tab.label}
                         </button>
                     ))}
@@ -548,11 +568,3 @@ function EmailTab({ data, copied, onCopy, emailSent, onMarkSent }: {
     );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-    return (
-        <div className="mb-6">
-            <h3 className="font-display text-lg text-text-primary mb-4">{title}</h3>
-            {children}
-        </div>
-    );
-}

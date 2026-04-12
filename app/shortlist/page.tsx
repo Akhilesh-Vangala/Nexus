@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import SiteHeader from '@/components/SiteHeader';
 import SiteFooter from '@/components/SiteFooter';
+import PageBackdrop from '@/components/PageBackdrop';
 import { getShortlist, removeShortlist, type ShortlistEntry } from '@/lib/shortlist';
 
 export default function ShortlistPage() {
@@ -36,9 +37,7 @@ export default function ShortlistPage() {
 
     return (
         <div className="relative flex min-h-screen flex-col overflow-hidden bg-bg-primary">
-            <div className="pointer-events-none fixed inset-0">
-                <div className="absolute right-0 top-1/3 h-[300px] w-[300px] rounded-full bg-accent-purple/[0.07] blur-[90px]" />
-            </div>
+            <PageBackdrop subtle />
             <SiteHeader subtitle="Shortlist" />
 
             <main id="main-content" className="relative z-10 mx-auto w-full max-w-3xl flex-1 px-4 py-10 sm:px-6">
