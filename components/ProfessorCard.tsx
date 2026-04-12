@@ -56,14 +56,14 @@ export default function ProfessorCard({ professor, rank, onClick }: ProfessorCar
             onClick={onClick}
             onKeyDown={handleKeyDown}
             aria-label={`Open profile for ${professor.name}`}
-            className={`group relative cursor-pointer rounded-2xl p-6 glass-card transition-transform duration-300 hover:-translate-y-0.5 ${glowClass}`}
+            className={`group relative cursor-pointer overflow-hidden rounded-2xl p-6 glass-card glass-card-shine transition-all duration-500 ease-out hover:-translate-y-1 ${glowClass}`}
         >
             <div className="absolute left-0 top-6 h-[calc(100%-3rem)] w-1 rounded-r-full bg-gradient-to-b from-accent-amber/80 via-accent-teal/40 to-transparent opacity-60" />
 
             <button
                 type="button"
                 onClick={handleStar}
-                className="absolute right-3 top-12 z-10 rounded-lg p-2 text-lg text-text-tertiary transition-colors hover:bg-white/5 hover:text-accent-amber"
+                className="absolute right-3 top-12 z-10 rounded-xl border border-white/[0.06] bg-bg-primary/40 p-2 text-lg text-text-tertiary backdrop-blur-sm transition-all hover:border-accent-amber/30 hover:bg-accent-amber/10 hover:text-accent-amber hover:shadow-glow-amber"
                 title={starred ? 'Remove from shortlist' : 'Save to shortlist'}
                 aria-label={starred ? 'Remove from shortlist' : 'Save to shortlist'}
             >

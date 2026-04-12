@@ -240,7 +240,12 @@ export default function ResultsPage() {
               : 'Columbia';
 
     return (
-        <div className="flex min-h-screen flex-col bg-bg-primary">
+        <div className="relative flex min-h-screen flex-col overflow-hidden bg-bg-primary">
+            <div className="pointer-events-none fixed inset-0">
+                <div className="absolute -right-[20%] top-0 h-[420px] w-[420px] rounded-full bg-accent-purple/[0.06] blur-[100px]" />
+                <div className="absolute -left-[15%] bottom-0 h-[380px] w-[380px] rounded-full bg-accent-teal/[0.05] blur-[90px]" />
+                <div className="noise-overlay opacity-[0.12]" aria-hidden />
+            </div>
             <SiteHeader
                 subtitle="Results"
                 right={
@@ -254,7 +259,7 @@ export default function ResultsPage() {
                 }
             />
 
-            <main id="main-content" className="flex-1">
+            <main id="main-content" className="relative z-10 flex-1">
                 <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:py-10">
                     <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,2.1fr)]">
                         <aside className="space-y-6 lg:sticky lg:top-24 lg:self-start">

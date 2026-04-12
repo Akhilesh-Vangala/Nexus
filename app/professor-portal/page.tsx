@@ -48,10 +48,13 @@ export default function ProfessorPortal() {
     };
 
     return (
-        <div className="flex min-h-screen flex-col bg-bg-primary dot-grid">
+        <div className="relative flex min-h-screen flex-col overflow-hidden bg-bg-primary dot-grid">
+            <div className="pointer-events-none fixed inset-0">
+                <div className="absolute left-[10%] top-[20%] h-[280px] w-[280px] rounded-full bg-accent-purple/[0.07] blur-[80px]" />
+            </div>
             <SiteHeader subtitle="Professor portal" />
 
-            <main id="main-content" className="flex-1">
+            <main id="main-content" className="relative z-10 flex-1">
             <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6 sm:py-14">
                 <motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }}>
                     <Link

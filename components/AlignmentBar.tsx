@@ -6,25 +6,30 @@ export default function AlignmentBar({ score }: { score: number }) {
     const [width, setWidth] = useState(0);
 
     useEffect(() => {
-        const timer = setTimeout(() => setWidth(score), 100);
+        const timer = setTimeout(() => setWidth(score), 120);
         return () => clearTimeout(timer);
     }, [score]);
 
-    const barColor =
-        score >= 85 ? 'bg-accent-amber' :
-            score >= 70 ? 'bg-accent-teal' :
-                'bg-text-tertiary';
+    const gradient =
+        score >= 85
+            ? 'from-amber-300 via-amber-400 to-amber-600'
+            : score >= 70
+              ? 'from-teal-300 via-teal-400 to-teal-600'
+              : 'from-text-tertiary/80 to-text-tertiary/40';
 
     return (
         <div className="flex items-center gap-3">
-            <div className="flex-1 h-1.5 bg-white/[0.06] rounded-full overflow-hidden">
+            <div className="relative h-2 flex-1 overflow-hidden rounded-full bg-white/[0.06] shadow-inner">
                 <div
-                    className={`h-full rounded-full alignment-bar ${barColor}`}
+                    className={`h-full rounded-full bg-gradient-to-r ${gradient} alignment-bar relative overflow-hidden shadow-[0_0_12px_-2px_rgba(232,163,23,0.4)]`}
                     style={{ width: `${width}%` }}
-                />
+                >
+                    <span className="absolute inset-0 bg-gradient-to-b from-white/25 to-transparent" />
+                </div>
             </div>
-            <span className="font-mono text-xs text-text-secondary whitespace-nowrap">
-                {Math.round(score)}% aligned
+            <span className="whitespace-nowrap font-mono text-xs tabular-nums text-text-secondary">
+                <span className="text-text-primary">{Math.round(score)}</span>
+                <span className="text-text-tertiary">%</span>
             </span>
         </div>
     );
