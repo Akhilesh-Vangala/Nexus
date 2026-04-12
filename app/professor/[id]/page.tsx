@@ -5,6 +5,9 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import AlignmentBar from '@/components/AlignmentBar';
 import TimingBadge from '@/components/TimingBadge';
+import SiteHeader from '@/components/SiteHeader';
+import SiteFooter from '@/components/SiteFooter';
+import { apiUrl } from '@/lib/api';
 
 const TABS = [
     { id: 'research', label: 'Research Intelligence', icon: '🔬' },
@@ -38,8 +41,7 @@ export default function ProfessorPage() {
         setIsLoadingDeep(true);
         try {
             const context = JSON.parse(sessionStorage.getItem('searchContext') || '{}');
-            const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-            const res = await fetch(`${API_URL}/api/professor/deep`, {
+            const res = await fetch(apiUrl('/api/professor/deep'), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -71,9 +73,12 @@ export default function ProfessorPage() {
 
     if (!professor) {
         return (
-            <main className="min-h-screen bg-bg-primary flex items-center justify-center">
-                <div className="skeleton h-8 w-48" />
-            </main>
+            <div className="flex min-h-screen flex-col bg-bg-primary">
+                <SiteHeader showBack subtitle="Profile" />
+                <main id="main-content" className="flex flex-1 items-center justify-center">
+                    <div className="skeleton h-8 w-48" />
+                </main>
+            </div>
         );
     }
 
@@ -81,21 +86,10 @@ export default function ProfessorPage() {
     const score = data.alignment_score || 0;
 
     return (
-        <main className="min-h-screen bg-bg-primary">
-            {/* Nav */}
-            <div className="border-b border-white/[0.06] bg-bg-secondary/50 backdrop-blur-sm sticky top-0 z-50">
-                <div className="max-w-6xl mx-auto px-6 py-3 flex items-center gap-4">
-                    <button onClick={() => router.back()} className="text-text-tertiary hover:text-text-primary text-sm font-mono transition-colors">
-                        ← Back
-                    </button>
-                    <span className="text-white/10">|</span>
-                    <button onClick={() => router.push('/')} className="font-display text-lg text-text-primary hover:text-accent-amber transition-colors">
-                        LabLens
-                    </button>
-                </div>
-            </div>
+        <div className="flex min-h-screen flex-col bg-bg-primary">
+            <SiteHeader showBack subtitle="Professor profile" />
 
-            <div className="max-w-6xl mx-auto px-6 py-8">
+            <main id="main-content" className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6">
                 {/* Professor header */}
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
                     <div className="flex items-start justify-between flex-wrap gap-4">
@@ -178,8 +172,10 @@ export default function ProfessorPage() {
                         />
                     )}
                 </motion.div>
-            </div>
-        </main>
+            </main>
+
+            <SiteFooter />
+        </div>
     );
 }
 
@@ -236,14 +232,34 @@ function ResearchTab({ data }: { data: any }) {
             )}
 
             {/* ML Explainability Panel */}
-            <Section title="How LabLens Computed This Score">
-                <div className="glass-card p-5 font-mono text-xs space-y-3 border-accent-purple/20">
-                    <p className="text-text-tertiary">Model: <span className="text-text-secondary">text-embedding-3-small (OpenAI)</span></p>
-                    <p className="text-text-tertiary">Method: <span className="text-text-secondary">
-                        {data.three_tier_score ? 'Three-tier privacy-preserving composite scoring' : 'Cosine similarity over research embeddings'}
-                    </span></p>
+            <Section title="How LabLens computed this score">
+                <div className="glass-card space-y-3 border-accent-purple/20 p-5 font-mono text-xs">
+                    <p className="text-text-tertiary">
+                        Model:{' '}
+                        <span className="text-text-secondary">
+                            {typeof data.alignment_detail?.model === 'string'
+                                ? data.alignment_detail.model
+                                : 'sentence-transformers (local)'}
+                        </span>
+                    </p>
+                    <p className="text-text-tertiary">
+                        Vector dimensions:{' '}
+                        <span className="text-text-secondary">
+                            {typeof data.alignment_detail?.embedding_dimensions === 'number'
+                                ? data.alignment_detail.embedding_dimensions
+                                : 384}
+                        </span>
+                    </p>
+                    <p className="text-text-tertiary">
+                        Method:{' '}
+                        <span className="text-text-secondary">
+                            {data.three_tier_score
+                                ? 'Three-tier composite (public similarity + private signal)'
+                                : 'Cosine similarity over dense research embeddings'}
+                        </span>
+                    </p>
                     <div className="border-t border-white/[0.06] pt-3">
-                        <p className="text-text-tertiary mb-2">Your interest → vector (1536 dimensions)</p>
+                        <p className="mb-2 text-text-tertiary">Paper-level similarity (normalized)</p>
                         {data.alignment_detail?.paper_scores?.map((s: number, i: number) => (
                             <div key={i} className="flex items-center gap-2 mb-1">
                                 <span className="text-text-tertiary w-4">{i + 1}.</span>

@@ -28,10 +28,10 @@ const LEVELS = [
 
 interface SearchInputProps {
     onSearch: (query: string, university: string, level: string, background: string) => void;
-    isLoading: boolean;
+    isLoading?: boolean;
 }
 
-export default function SearchInput({ onSearch, isLoading }: SearchInputProps) {
+export default function SearchInput({ onSearch, isLoading = false }: SearchInputProps) {
     const [query, setQuery] = useState('');
     const [university, setUniversity] = useState('Columbia University');
     const [level, setLevel] = useState('masters');
@@ -55,29 +55,40 @@ export default function SearchInput({ onSearch, isLoading }: SearchInputProps) {
     };
 
     return (
-        <div className="w-full max-w-2xl mx-auto">
-            {/* Main textarea */}
-            <div className="glass-card p-1 mb-4">
+        <div className="mx-auto w-full max-w-2xl">
+            <label htmlFor="lablens-interest" className="sr-only">
+                Describe your research interests
+            </label>
+            <div className="glass-card mb-4 p-1 ring-1 ring-white/[0.04] transition-shadow focus-within:ring-accent-amber/25">
                 <textarea
+                    id="lablens-interest"
                     ref={textareaRef}
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     placeholder={PLACEHOLDERS[placeholderIdx]}
-                    className="w-full bg-transparent text-text-primary placeholder-text-tertiary font-body text-base p-4 resize-none focus:outline-none min-h-[100px]"
-                    rows={3}
+                    className="min-h-[120px] w-full resize-none bg-transparent p-4 font-body text-base text-text-primary placeholder:text-text-tertiary focus:outline-none"
+                    rows={4}
+                    autoComplete="off"
                     onKeyDown={(e) => {
-                        if (e.key === 'Enter' && e.metaKey) handleSubmit();
+                        if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                            e.preventDefault();
+                            handleSubmit();
+                        }
                     }}
                 />
             </div>
 
             {/* Controls row */}
-            <div className="flex flex-col sm:flex-row gap-3 mb-4">
-                {/* University selector */}
-                <select
+            <div className="mb-4 flex flex-col gap-3 sm:flex-row">
+                <div className="flex flex-1 flex-col gap-1.5">
+                    <span className="px-1 font-mono text-[10px] uppercase tracking-wider text-text-tertiary">
+                        University
+                    </span>
+                    <select
                     value={university}
                     onChange={(e) => setUniversity(e.target.value)}
-                    className="flex-1 bg-bg-secondary border border-white/[0.08] rounded-xl px-4 py-3 text-text-primary font-body text-sm focus:outline-none focus:border-accent-amber/40 appearance-none cursor-pointer"
+                    aria-label="University"
+                    className="flex-1 cursor-pointer appearance-none rounded-xl border border-white/[0.08] bg-bg-secondary px-4 py-3 font-body text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent-amber/35"
                     style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%239CA3AF' d='M6 8L1 3h10z'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 12px center' }}
                 >
                     {UNIVERSITIES.map((u) => (
@@ -86,14 +97,23 @@ export default function SearchInput({ onSearch, isLoading }: SearchInputProps) {
                         </option>
                     ))}
                 </select>
+                </div>
 
-                {/* Level pills */}
-                <div className="flex gap-1 bg-bg-secondary border border-white/[0.08] rounded-xl p-1">
+                <div className="flex flex-col gap-1.5 sm:min-w-[220px]">
+                    <span className="px-1 font-mono text-[10px] uppercase tracking-wider text-text-tertiary">
+                        Level
+                    </span>
+                    <div
+                        className="flex gap-1 rounded-xl border border-white/[0.08] bg-bg-secondary p-1"
+                        role="group"
+                        aria-label="Student level"
+                    >
                     {LEVELS.map((l) => (
                         <button
+                            type="button"
                             key={l.value}
                             onClick={() => setLevel(l.value)}
-                            className={`px-3 py-2 rounded-lg text-xs font-mono transition-all ${level === l.value
+                            className={`rounded-lg px-3 py-2 font-mono text-xs transition-all ${level === l.value
                                     ? 'bg-accent-amber/20 text-accent-amber'
                                     : 'text-text-tertiary hover:text-text-secondary'
                                 }`}
@@ -101,14 +121,16 @@ export default function SearchInput({ onSearch, isLoading }: SearchInputProps) {
                             {l.label}
                         </button>
                     ))}
+                    </div>
                 </div>
             </div>
 
             {/* Optional background toggle */}
             <div className="mb-4">
                 <button
+                    type="button"
                     onClick={() => setShowBackground(!showBackground)}
-                    className="text-xs font-mono text-text-tertiary hover:text-text-secondary transition-colors"
+                    className="text-xs font-mono text-text-tertiary transition-colors hover:text-text-secondary"
                 >
                     {showBackground ? '− Hide background' : '+ Add your technical background (optional)'}
                 </button>
@@ -117,7 +139,7 @@ export default function SearchInput({ onSearch, isLoading }: SearchInputProps) {
                         value={background}
                         onChange={(e) => setBackground(e.target.value)}
                         placeholder="e.g. 2 years Python/PyTorch, took ML and probability courses, worked on NLP project..."
-                        className="w-full mt-2 bg-bg-secondary border border-white/[0.08] rounded-xl px-4 py-3 text-text-primary placeholder-text-tertiary font-body text-sm resize-none focus:outline-none focus:border-accent-teal/40 min-h-[60px]"
+                        className="mt-2 min-h-[60px] w-full resize-none rounded-xl border border-white/[0.08] bg-bg-secondary px-4 py-3 font-body text-sm text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-accent-teal/35"
                         rows={2}
                     />
                 )}
@@ -125,9 +147,10 @@ export default function SearchInput({ onSearch, isLoading }: SearchInputProps) {
 
             {/* CTA Button */}
             <button
+                type="button"
                 onClick={handleSubmit}
                 disabled={!query.trim() || isLoading}
-                className="w-full py-4 rounded-xl font-body font-semibold text-base transition-all disabled:opacity-40 disabled:cursor-not-allowed bg-gradient-to-r from-accent-amber to-amber-600 text-bg-primary hover:shadow-glow-amber hover:scale-[1.01] active:scale-[0.99]"
+                className="w-full rounded-xl bg-gradient-to-r from-accent-amber to-amber-600 py-4 font-body text-base font-semibold text-bg-primary shadow-lg shadow-accent-amber/10 transition-all hover:shadow-glow-amber enabled:hover:brightness-105 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-40"
             >
                 {isLoading ? (
                     <span className="flex items-center justify-center gap-2">
@@ -141,7 +164,7 @@ export default function SearchInput({ onSearch, isLoading }: SearchInputProps) {
 
             {/* Helper text */}
             <p className="text-center text-xs text-text-tertiary font-mono mt-3">
-                Searches live faculty data, papers, grants, and alumni in real time · ⌘+Enter to search
+                Live faculty data, papers, and grants · ⌘ or Ctrl + Enter to search
             </p>
         </div>
     );

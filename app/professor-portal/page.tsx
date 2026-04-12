@@ -1,7 +1,11 @@
 'use client';
 
+import Link from 'next/link';
 import { useState } from 'react';
 import { motion } from 'framer-motion';
+import SiteHeader from '@/components/SiteHeader';
+import SiteFooter from '@/components/SiteFooter';
+import { apiUrl } from '@/lib/api';
 
 const EPSILON_OPTIONS = [
     { value: 0.5, label: 'High Privacy', desc: 'Maximum noise, lower matching accuracy' },
@@ -22,8 +26,7 @@ export default function ProfessorPortal() {
         if (!skillsDescription.trim() || !professorName.trim()) return;
         setIsSubmitting(true);
         try {
-            const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-            const res = await fetch(`${API_URL}/api/professor/private-signal`, {
+            const res = await fetch(apiUrl('/api/professor/private-signal'), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -45,15 +48,20 @@ export default function ProfessorPortal() {
     };
 
     return (
-        <main className="min-h-screen bg-bg-primary dot-grid">
-            <div className="max-w-3xl mx-auto px-6 py-12">
-                {/* Header */}
-                <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}>
-                    <a href="/" className="font-display text-lg text-text-tertiary hover:text-accent-amber transition-colors mb-8 block">
-                        ← LabLens
-                    </a>
+        <div className="flex min-h-screen flex-col bg-bg-primary dot-grid">
+            <SiteHeader subtitle="Professor portal" />
 
-                    <h1 className="font-display text-4xl text-text-primary mb-2">Professor Portal</h1>
+            <main id="main-content" className="flex-1">
+            <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6 sm:py-14">
+                <motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }}>
+                    <Link
+                        href="/"
+                        className="mb-8 inline-block font-mono text-xs text-text-tertiary transition-colors hover:text-accent-amber"
+                    >
+                        ← Home
+                    </Link>
+
+                    <h1 className="mb-2 font-display text-3xl text-text-primary sm:text-4xl">Professor Portal</h1>
                     <p className="text-text-secondary font-body mb-8">
                         Register confidential research signals. Students see alignment — never your description.
                     </p>
@@ -117,6 +125,7 @@ export default function ProfessorPortal() {
                             <div className="flex gap-2">
                                 {EPSILON_OPTIONS.map((opt) => (
                                     <button
+                                        type="button"
                                         key={opt.value}
                                         onClick={() => setEpsilon(opt.value)}
                                         className={`flex-1 p-3 rounded-xl text-center transition-all ${epsilon === opt.value
@@ -141,9 +150,10 @@ export default function ProfessorPortal() {
                         </div>
 
                         <button
+                            type="button"
                             onClick={handleSubmit}
                             disabled={!skillsDescription.trim() || !professorName.trim() || isSubmitting}
-                            className="w-full py-3 rounded-xl bg-gradient-to-r from-accent-purple to-purple-700 text-white font-body font-semibold transition-all hover:shadow-glow-purple disabled:opacity-40"
+                            className="w-full rounded-xl bg-gradient-to-r from-accent-purple to-purple-700 py-3 font-body font-semibold text-white shadow-lg shadow-purple-900/20 transition-all hover:brightness-110 disabled:opacity-40"
                         >
                             {isSubmitting ? '⟳ Generating Private Signal...' : 'Generate Private Signal →'}
                         </button>
@@ -162,15 +172,19 @@ export default function ProfessorPortal() {
                         </div>
                         <p className="text-accent-teal text-sm mt-4 font-body">{result.message}</p>
                         <button
+                            type="button"
                             onClick={() => setResult(null)}
-                            className="mt-4 px-4 py-2 rounded-lg bg-white/5 text-text-tertiary text-sm hover:text-text-secondary transition-colors"
+                            className="mt-4 rounded-lg bg-white/5 px-4 py-2 text-sm text-text-tertiary transition-colors hover:text-text-secondary"
                         >
                             Create another signal
                         </button>
                     </motion.div>
                 )}
             </div>
-        </main>
+            </main>
+
+            <SiteFooter />
+        </div>
     );
 }
 

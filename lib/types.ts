@@ -14,6 +14,10 @@ export interface AlignmentDetail {
     best_paper_title: string;
     raw_cosine: number;
     statement_score?: number;
+    best_matching_paper_idx?: number;
+    model?: string;
+    embedding_dimensions?: number;
+    confidence?: string;
 }
 
 export interface AlignmentScore {
@@ -144,6 +148,16 @@ export interface Alumni {
     research_area: string;
 }
 
+export interface IntentPayload {
+    primary_domain?: string;
+    specific_topics?: string[];
+    methods_mentioned?: string[];
+    career_direction?: string;
+    embedding_text?: string;
+    search_keywords?: string[];
+    student_level_context?: string;
+}
+
 export interface SearchResponse {
     professors: Professor[];
     total_verified: number;
@@ -153,6 +167,8 @@ export interface SearchResponse {
         professors_verified: number;
         embeddings_computed: number;
     };
+    intent?: IntentPayload | null;
+    message?: string;
 }
 
 export type TrackerState =

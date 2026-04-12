@@ -154,3 +154,38 @@ html, body {
 .glow-amber { box-shadow: 0 0 20px rgba(245,158,11,0.15); }
 .glow-teal { box-shadow: 0 0 20px rgba(20,184,166,0.15); }
 .glow-purple { box-shadow: 0 0 20px rgba(139,92,246,0.15); }
+
+/* Focus rings for keyboard users */
+:focus-visible {
+  outline: none;
+}
+
+button:focus-visible,
+a:focus-visible,
+[role="button"]:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+input:focus-visible {
+  outline: 2px solid rgba(245, 158, 11, 0.45);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dot-grid-animated {
+    animation: none;
+  }
+  .skeleton {
+    animation: none;
+    background: var(--bg-tertiary);
+  }
+  .step-pulse {
+    animation: none;
+  }
+  .alignment-bar {
+    transition: none !important;
+  }
+  .card-stagger {
+    animation: none;
+    opacity: 1;
+  }
+}
