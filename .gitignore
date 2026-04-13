@@ -1,0 +1,38 @@
+# Dependencies
+node_modules/
+.next/
+backend/.venv/
+venv/
+.venv/
+
+# Environment
+.env
+.env.local
+backend/.env
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+htmlcov/
+.coverage
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.idea/
+.vscode/settings.json
+*.swp
+*.swo
+
+# Build
+tsconfig.tsbuildinfo
+*.log
+
+# SQLite tracker database
+tracker.db
